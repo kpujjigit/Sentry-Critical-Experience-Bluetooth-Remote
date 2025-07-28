@@ -74,6 +74,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     ttfdSpan.setTag(value: "interactive", key: "ttfd_status")
                     ttfdSpan.finish()
                     
+                    // Report TTFD to Sentry as required by enableTimeToFullDisplayTracking
+                    SentrySDK.reportFullyDisplayed()
+                    
                     // Complete app launch tracking
                     appLaunchSpan.setTag(value: "success", key: "launch_status")
                     appLaunchSpan.setTag(value: "cold_start", key: "launch_type")

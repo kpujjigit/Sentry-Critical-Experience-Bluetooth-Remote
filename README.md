@@ -80,6 +80,7 @@ SentrySDK.start { options in
     options.enableNetworkTracking = true
     options.enableFileIOTracing = true
     options.enableUserInteractionTracing = true
+    options.enableTimeToFullDisplayTracing = true // TTFD automatic tracking
     
     // Mobile Session Replay
     options.experimental.sessionReplay.sessionSampleRate = 1.0
@@ -168,9 +169,37 @@ User Gesture → Mobile App (Swift/Sentry) → BLE Stack → Device ACK → UI U
                                             < 120ms         < 250ms      < 16ms
 ```
 
+### App Launch Performance Tracking (TTID/TTFD)
+
+The app implements comprehensive app launch performance monitoring with both **Time to Initial Display (TTID)** and **Time to Full Display (TTFD)** tracking:
+
+```swift
+// TTID - When UI becomes visible
+let ttidSpan = appLaunchSpan.startChild(operation: "app.launch.ttid", description: "Time to Initial Display")
+// ... UI setup ...
+ttidSpan.setTag(value: "completed", key: "ttid_status")
+ttidSpan.finish()
+
+// TTFD - When app becomes fully interactive
+let ttfdSpan = appLaunchSpan.startChild(operation: "app.launch.ttfd", description: "Time to Full Display")
+// ... full initialization ...
+ttfdSpan.setTag(value: "interactive", key: "ttfd_status")
+ttfdSpan.finish()
+
+// Report TTFD to Sentry for enableTimeToFullDisplayTracking compliance
+SentrySDK.reportFullyDisplayed()
+```
+
+**TTFD Compliance Strategy:**
+- **Custom Spans**: Detailed timing with business context and tags
+- **Sentry Native Call**: `SentrySDK.reportFullyDisplayed()` for automatic SDK integration
+- **Dual Approach**: Comprehensive tracking + native Sentry Mobile Vitals compatibility
+
 ### Custom Span Metrics
 | Span Operation | Success Criteria | Failure Signals | Business Value |
 |----------------|------------------|------------------|----------------|
+| `app.launch.ttid` | < 1000ms | slow UI render | First impression |
+| `app.launch.ttfd` | < 2000ms | delayed interactivity | User engagement |
 | `ui.action.remoteControl` | < 50ms blocking | ANR, frame drops | User retention |
 | `bt.write.command` | < 120ms RTT | timeout, retry | Device compatibility |
 | `device.response` | ACK < 250ms | no ACK, error code | Connection quality |
@@ -186,6 +215,23 @@ User Gesture → Mobile App (Swift/Sentry) → BLE Stack → Device ACK → UI U
 ## 📈 Building Dashboards
 
 ### Suggested Queries for Sentry Dashboards
+
+#### App Launch Performance (TTID/TTFD)
+```sql
+-- Time to Initial Display metrics
+SELECT 
+    avg(duration) as avg_ttid_ms,
+    p95(duration) as p95_ttid_ms
+FROM spans
+WHERE op = 'app.launch.ttid'
+
+-- Time to Full Display metrics  
+SELECT 
+    avg(duration) as avg_ttfd_ms,
+    p95(duration) as p95_ttfd_ms
+FROM spans
+WHERE op = 'app.launch.ttfd'
+```
 
 #### Connection Success Rate
 ```sql
@@ -314,8 +360,9 @@ if #available(iOS 14.0, *) {
 
 1. **App Launch Performance**:
    - Cold start times with `app.launch` transactions
-   - Time to Initial Display (TTID) - when UI becomes visible
-   - Time to Full Display (TTFD) - when app becomes fully interactive
+   - Time to Initial Display (TTID) - when UI becomes visible with `app.launch.ttid` spans
+   - Time to Full Display (TTFD) - when app becomes fully interactive with `app.launch.ttfd` spans
+   - **TTFD Compliance**: Uses both custom tracking spans AND `SentrySDK.reportFullyDisplayed()` for full Sentry compatibility
    - Launch success/failure rates
 
 2. **Screen Performance**:
