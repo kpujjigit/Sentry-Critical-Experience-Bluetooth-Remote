@@ -22,7 +22,7 @@ This app showcases how Sentry's iOS SDK can be used to:
 ### Sentry Integration Features
 - **Performance Monitoring**: Automatic and custom transaction tracking
 - **Error Monitoring**: Comprehensive error capture with rich context
-- **Session Replay**: Visual replay of user sessions (mobile)
+- **Session Replay**: Visual replay of user sessions with privacy-focused redaction
 - **Mobile Vitals**: App start time, slow/frozen frames tracking
 - **Custom Metrics**: Span-based metrics for building dashboards
 - **Breadcrumbs**: Detailed user action trails
@@ -78,8 +78,13 @@ SentrySDK.start { options in
     options.enableFileIOTracing = true
     options.enableUserInteractionTracing = true
     
-    // Mobile Features
+    // Mobile Session Replay
     options.experimental.sessionReplay.sessionSampleRate = 1.0
+    options.experimental.sessionReplay.onErrorSampleRate = 1.0
+    options.experimental.sessionReplay.maskAllText = true
+    options.experimental.sessionReplay.maskAllImages = true
+    
+    // Profiling
     options.configureProfiling = { $0.sessionSampleRate = 1.0 }
     
     // Enhanced Context
@@ -246,19 +251,45 @@ options.configureProfiling = { profilingOptions in
 
 ### Session Replay Configuration
 
-Capture visual user sessions for debugging:
+Capture visual user sessions for debugging with privacy protection:
 
 ```swift
-options.experimental.sessionReplay.sessionSampleRate = 1.0
-options.experimental.sessionReplay.errorSampleRate = 1.0
+// Session Replay with Privacy Controls
+options.experimental.sessionReplay.sessionSampleRate = 1.0 // 100% for demo
+options.experimental.sessionReplay.onErrorSampleRate = 1.0 // Capture on all errors
+options.experimental.sessionReplay.maskAllText = true // Redact all text content
+options.experimental.sessionReplay.maskAllImages = true // Redact all images
 ```
+
+**Privacy Features:**
+- All text content is automatically masked with asterisks
+- All images are redacted with colored blocks
+- User input is never captured in plain text
+- View hierarchy structure is preserved for debugging context
+
+**How to View Session Replays:**
+1. Navigate to your Sentry project → **Replays** section
+2. Click on any session to watch the video playback
+3. Use the timeline to jump to specific events or errors
+4. View synchronized network requests, breadcrumbs, and console logs
+5. Click error links to see issues with full session context
+
+Each replay captures:
+- User taps and gestures
+- Screen transitions and navigation
+- Background/foreground state changes
+- Device orientation changes
+- Network requests and responses
+- All errors with visual context
 
 ## 🎯 Key Demo Talking Points
 
 ### For Sales/Marketing Teams
 - **"Zero-configuration monitoring"** - Show automatic instrumentation
-- **"Complete user journey visibility"** - Demonstrate breadcrumb trails
+- **"Visual debugging with Session Replay"** - Watch actual user sessions leading to errors
+- **"Complete user journey visibility"** - Demonstrate breadcrumb trails and video context
 - **"Mobile-first approach"** - Highlight Session Replay and Mobile Vitals
+- **"Privacy-by-design"** - Show automatic text and image redaction
 - **"Actionable insights"** - Build dashboards from collected metrics
 
 ### For Engineering Teams

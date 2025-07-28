@@ -31,12 +31,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             options.enablePerformanceV2 = true
             options.enablePreWarmedAppStartTracing = true
             
+            // Mobile Session Replay Configuration
+            options.experimental.sessionReplay.sessionSampleRate = 1.0 // 100% for demo
+            options.experimental.sessionReplay.onErrorSampleRate = 1.0 // Capture on all errors
+            options.experimental.sessionReplay.maskAllText = true // Privacy: mask all text by default
+            options.experimental.sessionReplay.maskAllImages = true // Privacy: mask all images
+            
             // Performance Budgets Configuration
             options.enableAppHangTracking = true
             options.appHangTimeoutInterval = 2.0 // Detect hangs > 2 seconds
             options.enableAutoSessionTracking = true
-            
-            // Note: Session Replay not available in this Sentry version
             
             // Profiling Configuration
             options.configureProfiling = { profilingOptions in
