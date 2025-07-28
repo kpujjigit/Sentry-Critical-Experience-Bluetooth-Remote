@@ -1,0 +1,453 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AD1110001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220001 /* AppDelegate.swift */; };
+		AD1110002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220002 /* SceneDelegate.swift */; };
+		AD1110003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220003 /* ContentView.swift */; };
+		AD1110004 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AD2220004 /* Assets.xcassets */; };
+		AD1110005 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AD2220005 /* LaunchScreen.storyboard */; };
+		AD1110010 /* BluetoothDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220010 /* BluetoothDevice.swift */; };
+		AD1110011 /* BluetoothService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220011 /* BluetoothService.swift */; };
+		AD1110012 /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220012 /* AudioPlayerService.swift */; };
+		AD1110020 /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220020 /* NowPlayingView.swift */; };
+		AD1110021 /* PlaylistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220021 /* PlaylistView.swift */; };
+		AD1110022 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220022 /* SettingsView.swift */; };
+		AD1110030 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = AD3330030 /* Sentry */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AD0000001 /* BluetoothRemote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BluetoothRemote.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD2220001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		AD2220002 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		AD2220003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AD2220004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AD2220005 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		AD2220006 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AD2220010 /* BluetoothDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothDevice.swift; sourceTree = "<group>"; };
+		AD2220011 /* BluetoothService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothService.swift; sourceTree = "<group>"; };
+		AD2220012 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
+		AD2220020 /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
+		AD2220021 /* PlaylistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistView.swift; sourceTree = "<group>"; };
+		AD2220022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AD5550001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD1110030 /* Sentry in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AD6660001 = {
+			isa = PBXGroup;
+			children = (
+				AD6660002 /* BluetoothRemote */,
+				AD6660003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AD6660002 /* BluetoothRemote */ = {
+			isa = PBXGroup;
+			children = (
+				AD2220001 /* AppDelegate.swift */,
+				AD2220002 /* SceneDelegate.swift */,
+				AD2220003 /* ContentView.swift */,
+				AD6660010 /* Models */,
+				AD6660011 /* Services */,
+				AD6660012 /* Views */,
+				AD2220004 /* Assets.xcassets */,
+				AD2220005 /* LaunchScreen.storyboard */,
+				AD2220006 /* Info.plist */,
+			);
+			path = BluetoothRemote;
+			sourceTree = "<group>";
+		};
+		AD6660003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AD0000001 /* BluetoothRemote.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AD6660010 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AD2220010 /* BluetoothDevice.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AD6660011 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AD2220011 /* BluetoothService.swift */,
+				AD2220012 /* AudioPlayerService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		AD6660012 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AD2220020 /* NowPlayingView.swift */,
+				AD2220021 /* PlaylistView.swift */,
+				AD2220022 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AD7770001 /* BluetoothRemote */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AD9990001 /* Build configuration list for PBXNativeTarget "BluetoothRemote" */;
+			buildPhases = (
+				AD8880001 /* Sources */,
+				AD5550001 /* Frameworks */,
+				AD8880002 /* Resources */,
+				AD8880003 /* Upload dSYMs to Sentry */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BluetoothRemote;
+			packageProductDependencies = (
+				AD3330030 /* Sentry */,
+			);
+			productName = BluetoothRemote;
+			productReference = AD0000001 /* BluetoothRemote.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AD4440001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					AD7770001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = AD9990002 /* Build configuration list for PBXProject "BluetoothRemote" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AD6660001;
+			packageReferences = (
+				AD3330031 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
+			);
+			productRefGroup = AD6660003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AD7770001 /* BluetoothRemote */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AD8880002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD1110005 /* LaunchScreen.storyboard in Resources */,
+				AD1110004 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AD8880003 /* Upload dSYMs to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+			);
+			name = "Upload dSYMs to Sentry";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "# Upload dSYMs to Sentry - Updated Version\n# Load environment variables if .env file exists\nif [ -f .env ]; then\n    # Export only non-comment, non-empty lines\n    export $(grep -v '^#\\|^$' .env | xargs)\nfi\n\n# Check if required environment variables are set\nif [ -z \"$SENTRY_AUTH_TOKEN\" ] || [ -z \"$SENTRY_ORG\" ] || [ -z \"$SENTRY_PROJECT\" ]; then\n    echo \"❌ Error: Missing required environment variables.\"\n    echo \"Please ensure SENTRY_AUTH_TOKEN, SENTRY_ORG, and SENTRY_PROJECT are set in your .env file\"\n    echo \"For demo purposes, continuing build without dSYM upload\"\n    exit 0  # Don't fail the build\nfi\n\n# Handle simulator builds for development/testing\nif [[ \"$PLATFORM_NAME\" == \"iphonesimulator\" ]]; then\n    echo \"📱 Simulator build detected\"\n    echo \"🔬 For demo/testing purposes, we'll upload simulator dSYMs to enable\"\n    echo \"   symbolicated stack traces when testing error scenarios in the simulator\"\nfi\n\n# Check if sentry-cli is installed\nif ! command -v sentry-cli &> /dev/null; then\n    echo \"❌ sentry-cli not found - skipping dSYM upload for now\"\n    echo \"Install with: brew install getsentry/tools/sentry-cli\"\n    exit 0  # Don't fail the build\nfi\n\n# Find dSYM files in build output\nDSYM_FILES=$(find \"${DWARF_DSYM_FOLDER_PATH}\" -name \"*.dSYM\" 2>/dev/null)\n\nif [ -z \"$DSYM_FILES\" ]; then\n    echo \"⚠️  No dSYM files found - this is normal for debug configurations\"\n    exit 0\nfi\n\necho \"🚀 Uploading dSYMs to Sentry...\"\necho \"Organization: $SENTRY_ORG\"\necho \"Project: $SENTRY_PROJECT\"\necho \"Platform: ${PLATFORM_NAME:-device}\"\n\n# Upload dSYMs with source context\nsentry-cli debug-files upload \\\n    --auth-token \"$SENTRY_AUTH_TOKEN\" \\\n    --org \"$SENTRY_ORG\" \\\n    --project \"$SENTRY_PROJECT\" \\\n    --include-sources \\\n    ${DSYM_FILES}\n\nif [ $? -eq 0 ]; then\n    echo \"✅ dSYM upload completed successfully!\"\n    if [[ \"$PLATFORM_NAME\" == \"iphonesimulator\" ]]; then\n        echo \"🎯 Simulator dSYMs uploaded - error testing will show symbolicated stack traces\"\n    fi\nelse\n    echo \"❌ dSYM upload failed - continuing build anyway\"\n    exit 0  # Don't fail the build for demo purposes\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AD8880001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD1110010 /* BluetoothDevice.swift in Sources */,
+				AD1110011 /* BluetoothService.swift in Sources */,
+				AD1110012 /* AudioPlayerService.swift in Sources */,
+				AD1110020 /* NowPlayingView.swift in Sources */,
+				AD1110021 /* PlaylistView.swift in Sources */,
+				AD1110022 /* SettingsView.swift in Sources */,
+				AD1110001 /* AppDelegate.swift in Sources */,
+				AD1110002 /* SceneDelegate.swift in Sources */,
+				AD1110003 /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AD9990003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AD9990004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AD9990005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BluetoothRemote/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "BT Remote";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.demo.bluetoothremote;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AD9990006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = BluetoothRemote/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "BT Remote";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.demo.bluetoothremote;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AD9990001 /* Build configuration list for PBXNativeTarget "BluetoothRemote" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD9990005 /* Debug */,
+				AD9990006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AD9990002 /* Build configuration list for PBXProject "BluetoothRemote" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD9990003 /* Debug */,
+				AD9990004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AD3330031 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.53.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AD3330030 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD3330031 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AD4440001 /* Project object */;
+}

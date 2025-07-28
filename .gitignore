@@ -1,0 +1,16 @@
+.env
+
+# Exclude documentation files except README.md
+sentry_session_tracing_fix.md
+SETUP_VERIFICATION.md
+bluetooth_demo_verification.md
+
+# Exclude shell scripts
+*.sh
+
+# Xcode user-specific files
+BluetoothRemote.xcodeproj/project.xcworkspace/xcuserdata/
+BluetoothRemote.xcodeproj/xcuserdata/
+
+# macOS
+.DS_Store

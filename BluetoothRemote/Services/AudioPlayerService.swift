@@ -1,0 +1,461 @@
+import Foundation
+import Combine
+import Sentry
+
+@MainActor
+class AudioPlayerService: ObservableObject {
+    @Published var currentPlaylist: [AudioTrack] = []
+    @Published var currentTrackIndex: Int = 0
+    @Published var currentTime: TimeInterval = 0
+    @Published var playbackState: PlaybackState = .stopped
+    @Published var audioSettings = AudioSettings()
+    @Published var repeatMode: RepeatMode = .off
+    @Published var isShuffled: Bool = false
+    
+    // Bluetooth service reference for command execution
+    private let bluetoothService: BluetoothService
+    
+    // Private Properties
+    private var playbackTimer: Timer?
+    private let totalTime: TimeInterval = 180 // 3 minutes per track
+    
+    enum PlaybackState: String, CaseIterable {
+        case stopped = "stopped"
+        case playing = "playing"
+        case paused = "paused"
+        case loading = "loading"
+        
+        var icon: String {
+            switch self {
+            case .stopped: return "stop.fill"
+            case .playing: return "pause.fill"
+            case .paused: return "play.fill"
+            case .loading: return "ellipsis"
+            }
+        }
+    }
+    
+    enum RepeatMode: String, CaseIterable {
+        case off = "off"
+        case one = "one"
+        case all = "all"
+        
+        var icon: String {
+            switch self {
+            case .off: return "repeat"
+            case .one: return "repeat.1"
+            case .all: return "repeat"
+            }
+        }
+    }
+    
+    enum PlaybackError: Error, LocalizedError {
+        case noTrackSelected
+        case deviceNotConnected
+        case playbackFailed(String)
+        case commandTimeout
+        
+        var errorDescription: String? {
+            switch self {
+            case .noTrackSelected: return "No track selected for playback"
+            case .deviceNotConnected: return "No device connected"
+            case .playbackFailed(let reason): return "Playback failed: \(reason)"
+            case .commandTimeout: return "Audio command timed out"
+            }
+        }
+    }
+    
+    // MARK: - Initialization
+    
+    init(bluetoothService: BluetoothService) {
+        self.bluetoothService = bluetoothService
+        setupInitialPlaylist()
+        startPlaybackTimer()
+    }
+    
+    deinit {
+        playbackTimer?.invalidate()
+    }
+    
+    // MARK: - Computed Properties
+    
+    var currentTrack: AudioTrack? {
+        guard currentTrackIndex < currentPlaylist.count else { return nil }
+        return currentPlaylist[currentTrackIndex]
+    }
+    
+    var progress: Double {
+        return totalTime > 0 ? currentTime / totalTime : 0
+    }
+    
+    // MARK: - Core Playback Controls
+    
+    func play() {
+        SentrySDK.addBreadcrumb(Breadcrumb(
+            level: .info,
+            category: "audio.control"
+        ))
+        
+        Task {
+            do {
+                guard let track = currentTrack else {
+                    throw PlaybackError.noTrackSelected
+                }
+                
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                // Send BLE command to device
+                let response = try await bluetoothService.sendBLECommand("PLAY", parameters: [
+                    "track_id": track.id.uuidString,
+                    "position": currentTime
+                ])
+                
+                // Track UI state render after BLE response
+                let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update playback UI state")
+                renderSpan?.setTag(value: "play", key: "state_change")
+                renderSpan?.setTag(value: track.title, key: "track_title")
+                
+                // Update UI state
+                playbackState = .playing
+                
+                renderSpan?.finish()
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func pause() {
+        SentrySDK.addBreadcrumb(Breadcrumb(
+            level: .info,
+            category: "audio.control"
+        ))
+        
+        Task {
+            do {
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                let response = try await bluetoothService.sendBLECommand("PAUSE")
+                
+                // Track UI state render after BLE response
+                let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update pause UI state")
+                renderSpan?.setTag(value: "pause", key: "state_change")
+                
+                playbackState = .paused
+                
+                renderSpan?.finish()
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func stop() {
+        SentrySDK.addBreadcrumb(Breadcrumb(
+            level: .info,
+            category: "audio.control"
+        ))
+        
+        Task {
+            do {
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                let _ = try await bluetoothService.sendBLECommand("STOP")
+                playbackState = .stopped
+                currentTime = 0
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func skipToNext() {
+        SentrySDK.addBreadcrumb(Breadcrumb(
+            level: .info,
+            category: "audio.navigation"
+        ))
+        
+        guard !currentPlaylist.isEmpty else { return }
+        
+        let nextIndex = getNextTrackIndex()
+        if nextIndex != currentTrackIndex {
+            currentTrackIndex = nextIndex
+            currentTime = 0
+            
+            if playbackState == .playing {
+                play()
+            }
+        }
+    }
+    
+    func skipToPrevious() {
+        SentrySDK.addBreadcrumb(Breadcrumb(
+            level: .info,
+            category: "audio.navigation"
+        ))
+        
+        guard !currentPlaylist.isEmpty else { return }
+        
+        let prevIndex = getPreviousTrackIndex()
+        currentTrackIndex = prevIndex
+        currentTime = 0
+        
+        if playbackState == .playing {
+            play()
+        }
+    }
+    
+    func seekTo(_ time: TimeInterval) {
+        let clampedTime = max(0, min(time, totalTime))
+        currentTime = clampedTime
+        
+        Task {
+            do {
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                let _ = try await bluetoothService.sendBLECommand("SEEK", parameters: ["position": time])
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func adjustVolume(_ volume: Double) {
+        let clampedVolume = max(0.0, min(1.0, volume))
+        audioSettings.volume = clampedVolume
+        
+        Task {
+            do {
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                let response = try await bluetoothService.sendBLECommand("VOLUME", parameters: ["level": volume])
+                
+                // Track UI state render for volume update
+                let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update volume UI state")
+                renderSpan?.setTag(value: "volume_change", key: "state_change")
+                renderSpan?.setTag(value: "\(Int(clampedVolume * 100))", key: "volume_percent")
+                
+                renderSpan?.finish()
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func adjustBass(_ bass: Double) {
+        let clampedBass = max(-1.0, min(1.0, bass))
+        audioSettings.bass = clampedBass
+        
+        Task {
+            do {
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                let response = try await bluetoothService.sendBLECommand("EQ_BASS", parameters: ["level": bass])
+                
+                // Track UI state render for EQ update
+                let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update EQ UI state")
+                renderSpan?.setTag(value: "eq_bass", key: "state_change")
+                renderSpan?.setTag(value: "\(Int(clampedBass * 100))", key: "bass_level")
+                
+                renderSpan?.finish()
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func adjustTreble(_ treble: Double) {
+        let clampedTreble = max(-1.0, min(1.0, treble))
+        audioSettings.treble = clampedTreble
+        
+        Task {
+            do {
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                let _ = try await bluetoothService.sendBLECommand("EQ_TREBLE", parameters: ["level": treble])
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func applyEQPreset(_ preset: AudioSettings.EQPreset) {
+        // Note: Set preset values directly since selectedPreset is not stored
+        
+        // Apply preset values
+        switch preset {
+        case .flat:
+            audioSettings.bass = 0.0
+            audioSettings.treble = 0.0
+        case .bass:
+            audioSettings.bass = 0.5
+            audioSettings.treble = 0.0
+        case .rock:
+            audioSettings.bass = 0.3
+            audioSettings.treble = 0.2
+        case .jazz:
+            audioSettings.bass = -0.1
+            audioSettings.treble = 0.1
+        case .classical:
+            audioSettings.bass = -0.2
+            audioSettings.treble = 0.3
+        case .electronic:
+            audioSettings.bass = 0.4
+            audioSettings.treble = 0.1
+        case .vocal:
+            audioSettings.bass = -0.1
+            audioSettings.treble = 0.4
+        }
+        
+        Task {
+            do {
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                let _ = try await bluetoothService.sendBLECommand("EQ_PRESET", parameters: [
+                    "preset": preset.rawValue,
+                    "bass": audioSettings.bass,
+                    "treble": audioSettings.treble
+                ])
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func toggleMute() {
+        audioSettings.muteEnabled.toggle()
+        
+        Task {
+            do {
+                guard bluetoothService.connectedDevice != nil else {
+                    throw PlaybackError.deviceNotConnected
+                }
+                
+                let _ = try await bluetoothService.sendBLECommand("MUTE", parameters: ["enabled": audioSettings.muteEnabled])
+                
+            } catch {
+                SentrySDK.capture(error: error)
+            }
+        }
+    }
+    
+    func selectTrack(at index: Int) {
+        SentrySDK.addBreadcrumb(Breadcrumb(
+            level: .info,
+            category: "audio.navigation"
+        ))
+        
+        guard index >= 0 && index < currentPlaylist.count else { return }
+        
+        let _ = currentPlaylist[index]
+        currentTrackIndex = index
+        currentTime = 0
+        
+        if playbackState == .playing {
+            play()
+        }
+    }
+    
+    func shufflePlaylist() {
+        isShuffled.toggle()
+        
+        SentrySDK.addBreadcrumb(Breadcrumb(
+            level: .info,
+            category: "audio.playback"
+        ))
+        
+        if isShuffled {
+            currentPlaylist.shuffle()
+        } else {
+            currentPlaylist = AudioTrack.generateSampleTracks()
+        }
+        
+        // Reset to first track
+        currentTrackIndex = 0
+        currentTime = 0
+    }
+    
+    // MARK: - Private Methods
+    
+    private func setupInitialPlaylist() {
+        currentPlaylist = AudioTrack.generateSampleTracks()
+    }
+    
+    private func startPlaybackTimer() {
+        playbackTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.updatePlaybackTime()
+            }
+        }
+    }
+    
+    private func updatePlaybackTime() {
+        guard playbackState == .playing else { return }
+        
+        currentTime += 1.0
+        
+        if currentTime >= totalTime {
+            handleTrackEnded()
+        }
+    }
+    
+    private func handleTrackEnded() {
+        switch repeatMode {
+        case .one:
+            currentTime = 0
+            play()
+        case .all:
+            skipToNext()
+        case .off:
+            if currentTrackIndex < currentPlaylist.count - 1 {
+                skipToNext()
+            } else {
+                stop()
+            }
+        }
+    }
+    
+    private func getNextTrackIndex() -> Int {
+        guard !currentPlaylist.isEmpty else { return 0 }
+        
+        if currentTrackIndex < currentPlaylist.count - 1 {
+            return currentTrackIndex + 1
+        } else {
+            return repeatMode == .all ? 0 : currentTrackIndex
+        }
+    }
+    
+    private func getPreviousTrackIndex() -> Int {
+        guard !currentPlaylist.isEmpty else { return 0 }
+        
+        if currentTrackIndex > 0 {
+            return currentTrackIndex - 1
+        } else {
+            return repeatMode == .all ? currentPlaylist.count - 1 : 0
+        }
+    }
+} 
