@@ -17,7 +17,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             options.dsn = sentryDSN
             options.debug = true
             options.environment = sentryEnvironment
-            // Note: release property not available in this Sentry version
+            options.releaseName = sentryRelease
             
             // Performance Tracing Configuration
             options.tracesSampleRate = 1.0 // 100% sampling for demo

@@ -157,7 +157,9 @@ struct NowPlayingView: View {
                     isDraggingSeeker = editing
                     if !editing {
                         // Seek to new position when user finishes dragging
-                        let span = SentrySDK.span?.startChild(operation: "audio.seek", description: "Audio Seek")
+                        let span = SentrySDK.span?.startChild(operation: "ui.action.remoteControl", description: "Audio Seek")
+                        span?.setTag(value: "audio.seek", key: "control_type")
+                        span?.setTag(value: "50", key: "ui_response_threshold_ms")
                         span?.setTag(value: "\(seekerValue)", key: "seek_time")
                         audioPlayer.seekTo(seekerValue)
                         span?.finish()
@@ -190,7 +192,9 @@ struct NowPlayingView: View {
         HStack(spacing: 40) {
             // Previous Track
                          Button(action: {
-                 let span = SentrySDK.span?.startChild(operation: "audio.control.previous", description: "Skip Previous")
+                 let span = SentrySDK.span?.startChild(operation: "ui.action.remoteControl", description: "Skip Previous")
+                 span?.setTag(value: "audio.control.previous", key: "control_type")
+                 span?.setTag(value: "50", key: "ui_response_threshold_ms")
                  audioPlayer.skipToPrevious()
                  span?.finish()
              }) {
@@ -201,7 +205,9 @@ struct NowPlayingView: View {
             
             // Play/Pause
                          Button(action: {
-                 let span = SentrySDK.span?.startChild(operation: "audio.control.playpause", description: "Play/Pause Control")
+                 let span = SentrySDK.span?.startChild(operation: "ui.action.remoteControl", description: "Play/Pause Control")
+                 span?.setTag(value: "audio.control.playpause", key: "control_type")
+                 span?.setTag(value: "50", key: "ui_response_threshold_ms") // For ui.block_ms metric
                  
                  switch audioPlayer.playbackState {
                  case .playing:
@@ -235,7 +241,9 @@ struct NowPlayingView: View {
             
             // Next Track
                          Button(action: {
-                 let span = SentrySDK.span?.startChild(operation: "audio.control.next", description: "Skip Next")
+                 let span = SentrySDK.span?.startChild(operation: "ui.action.remoteControl", description: "Skip Next")
+                 span?.setTag(value: "audio.control.next", key: "control_type")
+                 span?.setTag(value: "50", key: "ui_response_threshold_ms")
                  audioPlayer.skipToNext()
                  span?.finish()
              }) {
@@ -255,7 +263,9 @@ struct NowPlayingView: View {
                 Spacer()
                 
                 Button(action: {
-                    let span = SentrySDK.span?.startChild(operation: "audio.mute.toggle", description: "Toggle mute from now playing")
+                    let span = SentrySDK.span?.startChild(operation: "ui.action.remoteControl", description: "Toggle mute from now playing")
+                    span?.setTag(value: "audio.mute.toggle", key: "control_type")
+                    span?.setTag(value: "50", key: "ui_response_threshold_ms")
                     audioPlayer.toggleMute()
                     span?.finish()
                 }) {
@@ -272,7 +282,9 @@ struct NowPlayingView: View {
                     value: Binding(
                         get: { audioPlayer.audioSettings.volume },
                         set: { newValue in
-                            let span = SentrySDK.span?.startChild(operation: "audio.volume.adjust", description: "Volume adjustment")
+                            let span = SentrySDK.span?.startChild(operation: "ui.action.remoteControl", description: "Volume adjustment")
+                            span?.setTag(value: "audio.volume.adjust", key: "control_type")
+                            span?.setTag(value: "50", key: "ui_response_threshold_ms")
                             audioPlayer.adjustVolume(newValue)
                             span?.setTag(value: "\(newValue)", key: "volume_level")
                             span?.finish()

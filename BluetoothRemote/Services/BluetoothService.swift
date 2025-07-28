@@ -70,6 +70,15 @@ class BluetoothService: ObservableObject {
     }
     
     func connectToDevice(_ device: BluetoothDevice) {
+        // Start connection transaction (required for bt.pairing.success_rate metric)
+        let connectionTransaction = SentrySDK.startTransaction(
+            name: "Connect to Bluetooth Device",
+            operation: "bt.connection"
+        )
+        connectionTransaction.setTag(value: device.name, key: "device_name")
+        connectionTransaction.setTag(value: device.deviceType.rawValue, key: "device_type")
+        connectionTransaction.setTag(value: "\(device.signalStrength)", key: "signal_strength")
+        
         connectionState = .connecting
         
         SentrySDK.addBreadcrumb(Breadcrumb(
@@ -91,14 +100,19 @@ class BluetoothService: ObservableObject {
                 self.connectionState = .connected
                 self.lastError = nil
                 renderSpan?.setTag(value: "success", key: "connection_status")
+                // Set connection result for success rate metric
+                connectionTransaction.setTag(value: "success", key: "connection_result")
             } else {
                 self.connectionState = .failed
                 self.lastError = .connectionTimeout
                 renderSpan?.setTag(value: "failed", key: "connection_status")
+                // Set connection result for success rate metric
+                connectionTransaction.setTag(value: "failure", key: "connection_result")
                 SentrySDK.capture(error: BluetoothError.connectionTimeout)
             }
             
             renderSpan?.finish()
+            connectionTransaction.finish()
         }
     }
     
