@@ -58,12 +58,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             options.maxBreadcrumbs = 150
             options.sendDefaultPii = true
             
-            // iOS-specific Performance Features with proper availability checks
-            if #available(iOS 13.0, *) {
-                // MetricKit is available from iOS 13.0, not 15.0
-                options.enableMetricKit = true // iOS MetricKit integration for system metrics
-            }
-            
             // App termination tracking (available on iOS 14.0+)
             if #available(iOS 14.0, *) {
                 options.enableWatchdogTerminationTracking = true // Track app terminations
