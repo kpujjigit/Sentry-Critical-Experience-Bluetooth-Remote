@@ -31,28 +31,41 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             options.enablePerformanceV2 = true
             options.enablePreWarmedAppStartTracing = true
             
-            // Mobile Session Replay Configuration
-            options.experimental.sessionReplay.sessionSampleRate = 1.0 // 100% for demo
-            options.experimental.sessionReplay.onErrorSampleRate = 1.0 // Capture on all errors
-            options.experimental.sessionReplay.maskAllText = true // Privacy: mask all text by default
-            options.experimental.sessionReplay.maskAllImages = true // Privacy: mask all images
-            
-            // Performance Budgets Configuration
-            options.enableAppHangTracking = true
+            // Mobile Vitals & Performance Insights Configuration
+            options.enableAppLaunchProfiling = true // App start performance tracking
+            options.enableFramesTracking = true // Slow/frozen frame detection
+            options.enableAppHangTracking = true // ANR/hang detection
             options.appHangTimeoutInterval = 2.0 // Detect hangs > 2 seconds
-            options.enableAutoSessionTracking = true
+            options.enableAutoSessionTracking = true // Session health monitoring
             
-            // Profiling Configuration
+            // Network Performance Monitoring
+            options.enableNetworkBreadcrumbs = true // Network request breadcrumbs
+            options.enableCaptureFailedRequests = true // Failed network requests
+            
+            // Mobile Session Replay Configuration
+            options.sessionReplay.sessionSampleRate = 1.0 // 100% for demo
+            options.sessionReplay.onErrorSampleRate = 1.0 // Capture on all errors
+            options.sessionReplay.maskAllText = true // Privacy: mask all text by default
+            options.sessionReplay.maskAllImages = true // Privacy: mask all images
+            
+            // UI Profiling Configuration (iOS 8.49.0+)
             options.configureProfiling = { profilingOptions in
-                profilingOptions.sessionSampleRate = 1.0
-                profilingOptions.lifecycle = .trace
+                profilingOptions.sessionSampleRate = 1.0 // 100% for demo
+                profilingOptions.lifecycle = .trace // Trace-based profiling for complete coverage
             }
             
-            // Error Monitoring
+            // Error Monitoring with Mobile Context
             options.attachStacktrace = true
-            options.enableCaptureFailedRequests = true
             options.maxBreadcrumbs = 150
             options.sendDefaultPii = true
+            
+            // iOS-specific Performance Features
+            options.enableMetricKit = true // iOS MetricKit integration for system metrics
+            options.enableWatchdogTerminationTracking = true // Track app terminations
+            options.enableOutOfMemoryTracking = true // Track OOM crashes
+            
+            // Session Health Configuration
+            options.sessionTrackingIntervalMillis = 30000 // 30-second session tracking interval
             
             // Note: Custom tags will be set per event
         }

@@ -136,14 +136,19 @@ class BluetoothService: ObservableObject {
         commandSpan?.setTag(value: device.deviceType.rawValue, key: "device_type")
         commandSpan?.setTag(value: "\(device.signalStrength)", key: "signal_strength")
         
+        // Mobile Performance: Network-like characteristics
+        commandSpan?.setTag(value: "bluetooth", key: "network_type")
+        commandSpan?.setTag(value: "2.4GHz", key: "frequency_band")
+        
         // Add battery level if available (for portable devices)
         if let batteryLevel = device.batteryLevel {
             commandSpan?.setTag(value: "\(batteryLevel)", key: "battery_level")
         }
 
+        // Mobile Vitals: Network request breadcrumb
         SentrySDK.addBreadcrumb(Breadcrumb(
             level: .info,
-            category: "bluetooth.command"
+            category: "mobile.network"
         ))
 
         do {
@@ -152,50 +157,79 @@ class BluetoothService: ObservableObject {
             let ackLatency = Double.random(in: 20...120)  // Device ACK: 20-120ms
             let willSucceed = Double.random(in: 0...1) > 0.05  // 95% success rate
 
-            // Phase 1: BLE Write
+            // Phase 1: BLE Write (simulates network request)
+            let writeStartTime = Date()
             try await Task.sleep(nanoseconds: UInt64(writeLatency * 1_000_000))
             
             if !willSucceed {
                 commandSpan?.setTag(value: "failed", key: "command_status")
-                commandSpan?.setTag(value: "writeLatency", key: "write_latency_ms")
+                commandSpan?.setTag(value: "\(writeLatency)", key: "write_latency_ms")
+                commandSpan?.setTag(value: "timeout", key: "failure_reason")
                 commandSpan?.finish()
+                
+                // Mobile Performance: Track failed requests
+                SentrySDK.addBreadcrumb(Breadcrumb(
+                    level: .error,
+                    category: "mobile.network.error"
+                ))
+                
                 throw BluetoothError.commandFailed(command)
             }
 
-            // Phase 2: Device Response
+            // Phase 2: Device Response (simulates network response)
             let responseSpan = commandSpan?.startChild(operation: "device.response", description: "Device ACK: \(command)")
             responseSpan?.setTag(value: device.deviceType.rawValue, key: "device_type")
+            responseSpan?.setTag(value: "bluetooth_ack", key: "response_type")
             
             try await Task.sleep(nanoseconds: UInt64(ackLatency * 1_000_000))
             
             let totalLatency = writeLatency + ackLatency
+            let writeEndTime = Date()
+            let requestDuration = writeEndTime.timeIntervalSince(writeStartTime) * 1000
             
-            // Tag spans with performance metrics
+            // Tag spans with Mobile Performance metrics
             commandSpan?.setTag(value: "success", key: "command_status")
-            commandSpan?.setTag(value: "writeLatency", key: "write_latency_ms")
-            commandSpan?.setTag(value: "totalLatency", key: "total_latency_ms")
+            commandSpan?.setTag(value: "\(writeLatency)", key: "write_latency_ms")
+            commandSpan?.setTag(value: "\(totalLatency)", key: "total_latency_ms")
+            commandSpan?.setTag(value: "\(requestDuration)", key: "request_duration_ms")
             
-            responseSpan?.setTag(value: "ackLatency", key: "ack_latency_ms")
+            responseSpan?.setTag(value: "\(ackLatency)", key: "ack_latency_ms")
             responseSpan?.setTag(value: "received", key: "ack_status")
+            responseSpan?.setTag(value: "200", key: "status_code") // Simulate HTTP-like status
             
-            // Return simulated device response
+            // Return simulated device response with performance metrics
             let response = [
                 "status": "success",
                 "command": command,
                 "latency_ms": totalLatency,
                 "device_state": ["volume": 75, "track": "Updated Track"],
                 "write_latency_ms": writeLatency,
-                "ack_latency_ms": ackLatency
+                "ack_latency_ms": ackLatency,
+                "request_duration_ms": requestDuration
             ] as [String : Any]
             
             responseSpan?.finish()
             commandSpan?.finish()
             
+            // Mobile Performance: Successful request breadcrumb
+            SentrySDK.addBreadcrumb(Breadcrumb(
+                level: .info,
+                category: "mobile.network.success"
+            ))
+            
             return response
 
         } catch {
             commandSpan?.setTag(value: "error", key: "command_status")
+            commandSpan?.setTag(value: error.localizedDescription, key: "error_message")
             commandSpan?.finish()
+            
+            // Mobile Performance: Error tracking
+            SentrySDK.addBreadcrumb(Breadcrumb(
+                level: .error,
+                category: "mobile.network.error"
+            ))
+            
             SentrySDK.capture(error: error)
             throw error
         }

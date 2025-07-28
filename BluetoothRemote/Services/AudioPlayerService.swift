@@ -69,8 +69,23 @@ class AudioPlayerService: ObservableObject {
     
     init(bluetoothService: BluetoothService) {
         self.bluetoothService = bluetoothService
+        
+        // Track service initialization performance
+        let initSpan = SentrySDK.span?.startChild(operation: "service.init", description: "AudioPlayerService Initialization")
+        initSpan?.setTag(value: "AudioPlayerService", key: "service_name")
+        
         setupInitialPlaylist()
         startPlaybackTimer()
+        
+        // Track initialization completion
+        initSpan?.setTag(value: "success", key: "init_status")
+        initSpan?.finish()
+        
+        // Add mobile vitals breadcrumb
+        SentrySDK.addBreadcrumb(Breadcrumb(
+            level: .info,
+            category: "mobile.performance"
+        ))
     }
     
     deinit {

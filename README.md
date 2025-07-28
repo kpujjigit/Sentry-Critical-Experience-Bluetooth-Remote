@@ -23,7 +23,10 @@ This app showcases how Sentry's iOS SDK can be used to:
 - **Performance Monitoring**: Automatic and custom transaction tracking
 - **Error Monitoring**: Comprehensive error capture with rich context
 - **Session Replay**: Visual replay of user sessions with privacy-focused redaction
-- **Mobile Vitals**: App start time, slow/frozen frames tracking
+- **Mobile Vitals**: App start time, slow/frozen frames tracking, screen load performance
+- **Mobile Performance Insights**: Complete iOS performance monitoring suite
+- **Network Request Tracking**: BLE command performance and failure analysis
+- **Session Health Monitoring**: User session quality and engagement metrics
 - **Custom Metrics**: Span-based metrics for building dashboards
 - **Breadcrumbs**: Detailed user action trails
 - **Profiling**: Performance profiling for optimization
@@ -281,6 +284,67 @@ Each replay captures:
 - Device orientation changes
 - Network requests and responses
 - All errors with visual context
+
+### Mobile Performance Insights Configuration
+
+Comprehensive iOS performance monitoring following [Sentry's Mobile Performance documentation](https://docs.sentry.io/product/insights/mobile/):
+
+```swift
+// Mobile Vitals & Performance Insights
+options.enableAppLaunchProfiling = true // App start performance tracking
+options.enableFramesTracking = true // Slow/frozen frame detection
+options.enableAppHangTracking = true // ANR/hang detection
+options.appHangTimeoutInterval = 2.0 // Detect hangs > 2 seconds
+options.enableAutoSessionTracking = true // Session health monitoring
+
+// Network Performance Monitoring
+options.enableNetworkBreadcrumbs = true // Network request breadcrumbs
+options.enableCaptureFailedRequests = true // Failed network requests
+
+// iOS-specific Performance Features
+options.enableMetricKit = true // iOS MetricKit integration
+options.enableWatchdogTerminationTracking = true // Track app terminations
+options.enableOutOfMemoryTracking = true // Track OOM crashes
+```
+
+**Key Mobile Performance Metrics Captured:**
+
+1. **App Launch Performance**:
+   - Cold start times with `app.launch` transactions
+   - Time to Initial Display (TTID) - when UI becomes visible
+   - Time to Full Display (TTFD) - when app becomes fully interactive
+   - Launch success/failure rates
+
+2. **Screen Performance**:
+   - Screen load times (`screen.load` operations)
+   - UI interaction response times (`ui.interaction` spans)
+   - Frame rendering performance (slow/frozen frame detection)
+   - Navigation performance between screens
+
+3. **Network-like Performance** (BLE Commands):
+   - Command request/response timing (`bt.write.command` → `device.response`)
+   - Connection quality metrics (signal strength, battery impact)
+   - Request success/failure rates with detailed error context
+   - Network-style performance categorization for dashboard compatibility
+
+4. **Session Health Metrics**:
+   - Session duration and user engagement patterns
+   - Device characteristics (CPU cores, memory, iOS version)
+   - Background/foreground state transitions
+   - App termination and crash tracking
+
+5. **Mobile Vitals Integration**:
+   - Automatic frame performance tracking
+   - App hang detection (ANR monitoring)
+   - Memory pressure monitoring
+   - iOS MetricKit system metrics integration
+
+**Viewing Mobile Performance Data:**
+1. Navigate to your Sentry project → **Insights** → **Mobile Performance**
+2. View **Mobile Vitals** for app start times and frame performance
+3. Check **Network Requests** for BLE command performance analysis
+4. Monitor **Session Health** for user engagement and app stability metrics
+5. Use **Profiling** data for code-level performance optimization
 
 ## 🎯 Key Demo Talking Points
 
