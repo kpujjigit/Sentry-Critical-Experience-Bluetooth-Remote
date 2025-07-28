@@ -33,7 +33,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             
             // Mobile Vitals & Performance Insights Configuration
             options.enableAppLaunchProfiling = true // App start performance tracking
-            options.enableFramesTracking = true // Slow/frozen frame detection
             options.enableAppHangTracking = true // ANR/hang detection
             options.appHangTimeoutInterval = 2.0 // Detect hangs > 2 seconds
             options.enableAutoSessionTracking = true // Session health monitoring
@@ -59,10 +58,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             options.maxBreadcrumbs = 150
             options.sendDefaultPii = true
             
-            // iOS-specific Performance Features
-            options.enableMetricKit = true // iOS MetricKit integration for system metrics
-            options.enableWatchdogTerminationTracking = true // Track app terminations
-            options.enableOutOfMemoryTracking = true // Track OOM crashes
+            // iOS-specific Performance Features with proper availability checks
+            if #available(iOS 13.0, *) {
+                // MetricKit is available from iOS 13.0, not 15.0
+                options.enableMetricKit = true // iOS MetricKit integration for system metrics
+            }
+            
+            // App termination tracking (available on iOS 14.0+)
+            if #available(iOS 14.0, *) {
+                options.enableWatchdogTerminationTracking = true // Track app terminations
+            }
             
             // Session Health Configuration
             options.sessionTrackingIntervalMillis = 30000 // 30-second session tracking interval

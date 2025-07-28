@@ -301,10 +301,13 @@ options.enableAutoSessionTracking = true // Session health monitoring
 options.enableNetworkBreadcrumbs = true // Network request breadcrumbs
 options.enableCaptureFailedRequests = true // Failed network requests
 
-// iOS-specific Performance Features
-options.enableMetricKit = true // iOS MetricKit integration
-options.enableWatchdogTerminationTracking = true // Track app terminations
-options.enableOutOfMemoryTracking = true // Track OOM crashes
+// iOS-specific Performance Features (with proper availability checks)
+if #available(iOS 13.0, *) {
+    options.enableMetricKit = true // iOS MetricKit integration (iOS 13.0+)
+}
+if #available(iOS 14.0, *) {
+    options.enableWatchdogTerminationTracking = true // Track app terminations (iOS 14.0+)
+}
 ```
 
 **Key Mobile Performance Metrics Captured:**
@@ -404,6 +407,15 @@ BluetoothRemote/
    - Some features (like Session Replay) work better on physical devices
    - Bluetooth simulation is more realistic on device
 
+4. **MetricKit Issues**:
+   - If the app crashes during startup with MetricKit enabled, disable it temporarily:
+   ```swift
+   // Temporarily disable MetricKit if causing issues
+   // options.enableMetricKit = true
+   ```
+   - MetricKit requires iOS 13.0+ and may have compatibility issues with certain simulators
+   - Check Console.app for MetricKit-related error messages
+
 ### Debug Mode
 
 Enable verbose logging for troubleshooting:
@@ -412,6 +424,14 @@ Enable verbose logging for troubleshooting:
 options.debug = true
 options.logLevel = .debug
 ```
+
+### iOS Version Compatibility
+
+If you encounter issues with specific Sentry features, ensure your iOS version meets the requirements:
+- **iOS 14.0+** for general functionality and Session Replay
+- **iOS 13.0+** for MetricKit integration 
+- **iOS 14.0+** for WatchdogTerminationTracking
+- **iOS 18.5+** recommended for optimal SwiftUI compatibility in simulator
 
 ## 📚 References
 
