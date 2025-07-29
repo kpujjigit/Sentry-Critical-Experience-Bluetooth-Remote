@@ -3,6 +3,7 @@ import Sentry
 
 struct PlaylistView: View {
     @ObservedObject var audioPlayer: AudioPlayerService
+    @EnvironmentObject var bluetoothService: BluetoothService
     @State private var showingShuffleConfirmation = false
     
     var body: some View {
@@ -49,8 +50,15 @@ struct PlaylistView: View {
                 Spacer()
                 
                 Button(action: {
+                    // 🎯 DEMO: Track device-specific shuffle lag
+                    let deviceName = bluetoothService.connectedDevice?.name ?? "No Device"
+                    let expectedLag = (deviceName == "Basement Sub" || deviceName == "Kitchen One") ? 225 : 30
+                    
                     let span = SentrySDK.span?.startChild(operation: "user.action.shuffle", description: "Shuffle Playlist")
                     span?.setTag(value: "\(audioPlayer.isShuffled)", key: "shuffle_enabled")
+                    span?.setTag(value: deviceName, key: "connected_device")
+                    span?.setTag(value: "\(expectedLag)", key: "expected_lag_ms")
+                    
                     showingShuffleConfirmation = true
                     span?.finish()
                 }) {

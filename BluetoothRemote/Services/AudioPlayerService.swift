@@ -127,15 +127,18 @@ class AudioPlayerService: ObservableObject {
                     "position": currentTime
                 ])
                 
-                // Track UI state render after BLE response
-                let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update playback UI state")
+                // Track UI state render after BLE response as child of current active span
+                let renderSpan = SentrySDK.span?.startChild(
+                    operation: "ui.state.render", 
+                    description: "Update playback UI state"
+                )
                 renderSpan?.setTag(value: "play", key: "state_change")
                 renderSpan?.setTag(value: track.title, key: "track_title")
+                renderSpan?.setTag(value: "true", key: "is_mobile_vital")
+                renderSpan?.finish()
                 
                 // Update UI state
                 playbackState = .playing
-                
-                renderSpan?.finish()
                 
             } catch {
                 SentrySDK.capture(error: error)
@@ -157,13 +160,16 @@ class AudioPlayerService: ObservableObject {
                 
                 let response = try await bluetoothService.sendBLECommand("PAUSE")
                 
-                // Track UI state render after BLE response
-                let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update pause UI state")
+                // Track UI state render after BLE response as child of current active span
+                let renderSpan = SentrySDK.span?.startChild(
+                    operation: "ui.state.render", 
+                    description: "Update pause UI state"
+                )
                 renderSpan?.setTag(value: "pause", key: "state_change")
+                renderSpan?.setTag(value: "true", key: "is_mobile_vital")
+                renderSpan?.finish()
                 
                 playbackState = .paused
-                
-                renderSpan?.finish()
                 
             } catch {
                 SentrySDK.capture(error: error)
@@ -201,14 +207,39 @@ class AudioPlayerService: ObservableObject {
         
         guard !currentPlaylist.isEmpty else { return }
         
-        let nextIndex = getNextTrackIndex()
-        if nextIndex != currentTrackIndex {
-            currentTrackIndex = nextIndex
-            currentTime = 0
-            
-            if playbackState == .playing {
-                play()
+        // 🎯 DEMO: Add artificial lag for specific devices
+        let deviceName = bluetoothService.connectedDevice?.name ?? ""
+        let artificialDelay: TimeInterval
+        
+        switch deviceName {
+        case "Basement Sub":
+            artificialDelay = 0.15 // 150ms delay - will show as laggy
+        case "Kitchen One":
+            artificialDelay = 0.12 // 120ms delay - also laggy
+        default:
+            artificialDelay = 0.02 // Normal 20ms delay
+        }
+        
+        // Create performance tracking span
+        let skipSpan = SentrySDK.span?.startChild(
+            operation: "ui.action.remoteControl",
+            description: "Skip Next"
+        )
+        skipSpan?.setTag(value: "audio.control.next", key: "control_type")
+        skipSpan?.setTag(value: deviceName, key: "device_name")
+        
+        // Simulate the artificial delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + artificialDelay) {
+            let nextIndex = self.getNextTrackIndex()
+            if nextIndex != self.currentTrackIndex {
+                self.currentTrackIndex = nextIndex
+                self.currentTime = 0
+                
+                if self.playbackState == .playing {
+                    self.play()
+                }
             }
+            skipSpan?.finish()
         }
     }
     
@@ -220,12 +251,37 @@ class AudioPlayerService: ObservableObject {
         
         guard !currentPlaylist.isEmpty else { return }
         
-        let prevIndex = getPreviousTrackIndex()
-        currentTrackIndex = prevIndex
-        currentTime = 0
+        // 🎯 DEMO: Add artificial lag for specific devices
+        let deviceName = bluetoothService.connectedDevice?.name ?? ""
+        let artificialDelay: TimeInterval
         
-        if playbackState == .playing {
-            play()
+        switch deviceName {
+        case "Basement Sub":
+            artificialDelay = 0.18 // 180ms delay - very laggy
+        case "Kitchen One":
+            artificialDelay = 0.14 // 140ms delay - also laggy
+        default:
+            artificialDelay = 0.025 // Normal 25ms delay
+        }
+        
+        // Create performance tracking span
+        let skipSpan = SentrySDK.span?.startChild(
+            operation: "ui.action.remoteControl",
+            description: "Skip Previous"
+        )
+        skipSpan?.setTag(value: "audio.control.previous", key: "control_type")
+        skipSpan?.setTag(value: deviceName, key: "device_name")
+        
+        // Simulate the artificial delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + artificialDelay) {
+            let prevIndex = self.getPreviousTrackIndex()
+            self.currentTrackIndex = prevIndex
+            self.currentTime = 0
+            
+            if self.playbackState == .playing {
+                self.play()
+            }
+            skipSpan?.finish()
         }
     }
     
@@ -259,11 +315,14 @@ class AudioPlayerService: ObservableObject {
                 
                 let response = try await bluetoothService.sendBLECommand("VOLUME", parameters: ["level": volume])
                 
-                // Track UI state render for volume update
-                let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update volume UI state")
+                // Track UI state render for volume update as child of current active span
+                let renderSpan = SentrySDK.span?.startChild(
+                    operation: "ui.state.render", 
+                    description: "Update volume UI state"
+                )
                 renderSpan?.setTag(value: "volume_change", key: "state_change")
                 renderSpan?.setTag(value: "\(Int(clampedVolume * 100))", key: "volume_percent")
-                
+                renderSpan?.setTag(value: "true", key: "is_mobile_vital")
                 renderSpan?.finish()
                 
             } catch {
@@ -284,11 +343,14 @@ class AudioPlayerService: ObservableObject {
                 
                 let response = try await bluetoothService.sendBLECommand("EQ_BASS", parameters: ["level": bass])
                 
-                // Track UI state render for EQ update
-                let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update EQ UI state")
+                // Track UI state render for EQ update as child of current active span
+                let renderSpan = SentrySDK.span?.startChild(
+                    operation: "ui.state.render", 
+                    description: "Update EQ UI state"
+                )
                 renderSpan?.setTag(value: "eq_bass", key: "state_change")
                 renderSpan?.setTag(value: "\(Int(clampedBass * 100))", key: "bass_level")
-                
+                renderSpan?.setTag(value: "true", key: "is_mobile_vital")
                 renderSpan?.finish()
                 
             } catch {
@@ -403,15 +465,42 @@ class AudioPlayerService: ObservableObject {
             category: "audio.playback"
         ))
         
-        if isShuffled {
-            currentPlaylist.shuffle()
-        } else {
-            currentPlaylist = AudioTrack.generateSampleTracks()
+        // 🎯 DEMO: Add artificial lag for specific devices during shuffle
+        let deviceName = bluetoothService.connectedDevice?.name ?? ""
+        let artificialDelay: TimeInterval
+        
+        switch deviceName {
+        case "Basement Sub":
+            artificialDelay = 0.25 // 250ms delay - very laggy for shuffle
+        case "Kitchen One":
+            artificialDelay = 0.20 // 200ms delay - also very laggy
+        default:
+            artificialDelay = 0.03 // Normal 30ms delay
         }
         
-        // Reset to first track
-        currentTrackIndex = 0
-        currentTime = 0
+        // Create performance tracking span for shuffle
+        let shuffleSpan = SentrySDK.span?.startChild(
+            operation: "ui.action.remoteControl",
+            description: "Shuffle Playlist"
+        )
+        shuffleSpan?.setTag(value: "playlist.shuffle", key: "control_type")
+        shuffleSpan?.setTag(value: deviceName, key: "device_name")
+        shuffleSpan?.setTag(value: "\(isShuffled)", key: "shuffle_enabled")
+        
+        // Simulate the artificial delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + artificialDelay) {
+            if self.isShuffled {
+                self.currentPlaylist.shuffle()
+            } else {
+                self.currentPlaylist = AudioTrack.generateSampleTracks()
+            }
+            
+            // Reset to first track
+            self.currentTrackIndex = 0
+            self.currentTime = 0
+            
+            shuffleSpan?.finish()
+        }
     }
     
     // MARK: - Private Methods

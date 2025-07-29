@@ -84,41 +84,43 @@ struct ContentView: View {
             .navigationBarHidden(true)
         }
         .onAppear {
-            // Track app screen load performance
-            let screenLoadSpan = SentrySDK.span?.startChild(operation: "screen.load", description: "Main Screen Load")
+            // SwiftUI Screen Load - Only needed because UIViewController tracing doesn't work for SwiftUI
+            let screenLoadSpan = SentrySDK.span?.startChild(
+                operation: "ui.load",
+                description: "SwiftUI Screen Load: ContentView"
+            )
             screenLoadSpan?.setTag(value: "ContentView", key: "screen_name")
-            screenLoadSpan?.setTag(value: "main", key: "screen_type")
+            screenLoadSpan?.setTag(value: "swiftui", key: "ui_framework")
             
-            // Track app usage and navigation patterns
             SentrySDK.addBreadcrumb(Breadcrumb(
                 level: .info,
-                category: "mobile.performance"
+                category: "ui.navigation"
             ))
             
-            // Simulate screen load completion
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                screenLoadSpan?.setTag(value: "loaded", key: "screen_status")
+            // Simulate TTFD for SwiftUI (since Sentry's TTFD only works for UIViewController)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                screenLoadSpan?.setTag(value: "loaded", key: "load_status")
                 screenLoadSpan?.finish()
+                SentrySDK.reportFullyDisplayed()
             }
         }
         .onChange(of: selectedTab) { newTab in
-            // Track tab navigation performance for Mobile Vitals
-            let tabChangeSpan = SentrySDK.span?.startChild(operation: "ui.interaction.tab_change", description: "Tab Navigation")
-            
-            // Mobile performance metrics
-            tabChangeSpan?.setTag(value: newTab.rawValue, key: "destination_tab")
-            tabChangeSpan?.setTag(value: selectedTab.rawValue, key: "source_tab")
-            tabChangeSpan?.setTag(value: "tab_navigation", key: "interaction_type")
+            // SwiftUI Navigation - Only needed because User Interaction Tracing is unavailable for SwiftUI
+            let navigationSpan = SentrySDK.span?.startChild(
+                operation: "ui.action",
+                description: "SwiftUI Tab Navigation"
+            )
+            navigationSpan?.setTag(value: newTab.rawValue, key: "destination_tab")
+            navigationSpan?.setTag(value: "tab_navigation", key: "interaction_type")
+            navigationSpan?.setTag(value: "swiftui", key: "ui_framework")
             
             SentrySDK.addBreadcrumb(Breadcrumb(
                 level: .info,
-                category: "mobile.navigation"
+                category: "ui.navigation"
             ))
             
-            // Simulate tab change completion for performance tracking
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                tabChangeSpan?.setTag(value: "completed", key: "navigation_status")
-                tabChangeSpan?.finish()
+                navigationSpan?.finish()
             }
         }
     }

@@ -70,15 +70,6 @@ class BluetoothService: ObservableObject {
     }
     
     func connectToDevice(_ device: BluetoothDevice) {
-        // Start connection transaction (required for bt.pairing.success_rate metric)
-        let connectionTransaction = SentrySDK.startTransaction(
-            name: "Connect to Bluetooth Device",
-            operation: "bt.connection"
-        )
-        connectionTransaction.setTag(value: device.name, key: "device_name")
-        connectionTransaction.setTag(value: device.deviceType.rawValue, key: "device_type")
-        connectionTransaction.setTag(value: "\(device.signalStrength)", key: "signal_strength")
-        
         connectionState = .connecting
         
         SentrySDK.addBreadcrumb(Breadcrumb(
@@ -86,12 +77,36 @@ class BluetoothService: ObservableObject {
             category: "bluetooth.connection"
         ))
         
-        // Simulate connection attempt
-        let willSucceed = Double.random(in: 0...1) > 0.1 // 90% success rate
+        // Create child span of the current active span (main session)
+        let connectionSpan = SentrySDK.span?.startChild(
+            operation: "bt.connection",
+            description: "Connect to Bluetooth Device: \(device.name)"
+        )
+        connectionSpan?.setTag(value: device.name, key: "device_name")
+        connectionSpan?.setTag(value: device.deviceType.rawValue, key: "device_type")
+        connectionSpan?.setTag(value: "\(device.signalStrength)", key: "signal_strength")
+        connectionSpan?.setTag(value: "true", key: "is_user_action")
+        
+        // 🎯 DEMO: Create poor connection rates for specific devices
+        let willSucceed: Bool
+        switch device.name {
+        case "Bedroom Move":
+            // 40% success rate - This will drag overall success below 85%
+            willSucceed = Double.random(in: 0...1) > 0.6
+        case "Basement Sub":
+            // 70% success rate - Also contribute to poor metrics
+            willSucceed = Double.random(in: 0...1) > 0.3
+        default:
+            // Other devices maintain 95% success rate
+            willSucceed = Double.random(in: 0...1) > 0.05
+        }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            // Track UI state render for connection result
-            let renderSpan = SentrySDK.span?.startChild(operation: "ui.state.render", description: "Update connection UI state")
+            // Track UI state render for connection result as child of connection span
+            let renderSpan = connectionSpan?.startChild(
+                operation: "ui.state.render", 
+                description: "Update connection UI state"
+            )
             renderSpan?.setTag(value: "connection_result", key: "state_change")
             renderSpan?.setTag(value: device.name, key: "device_name")
             
@@ -101,18 +116,25 @@ class BluetoothService: ObservableObject {
                 self.lastError = nil
                 renderSpan?.setTag(value: "success", key: "connection_status")
                 // Set connection result for success rate metric
-                connectionTransaction.setTag(value: "success", key: "connection_result")
+                connectionSpan?.setTag(value: "success", key: "connection_result")
+                connectionSpan?.setTag(value: "connected", key: "final_state")
+                
+                print("✅ Device connected successfully: \(device.name)")
             } else {
                 self.connectionState = .failed
                 self.lastError = .connectionTimeout
                 renderSpan?.setTag(value: "failed", key: "connection_status")
                 // Set connection result for success rate metric
-                connectionTransaction.setTag(value: "failure", key: "connection_result")
+                connectionSpan?.setTag(value: "failure", key: "connection_result")
+                connectionSpan?.setTag(value: "timeout", key: "failure_reason")
+                
                 SentrySDK.capture(error: BluetoothError.connectionTimeout)
+                
+                print("❌ Device connection failed: \(device.name)")
             }
             
             renderSpan?.finish()
-            connectionTransaction.finish()
+            connectionSpan?.finish()
         }
     }
     
@@ -142,13 +164,17 @@ class BluetoothService: ObservableObject {
             throw BluetoothError.deviceNotFound
         }
 
-        // Start BLE command span (parent for the entire command flow)
-        let commandSpan = SentrySDK.span?.startChild(operation: "bt.write.command", description: "BLE Command: \(command)")
+        // Start BLE command span as child of current active span (main session)
+        let commandSpan = SentrySDK.span?.startChild(
+            operation: "bt.write.command", 
+            description: "BLE Command: \(command)"
+        )
         commandSpan?.setTag(value: command, key: "command_type")
         commandSpan?.setTag(value: device.name, key: "device_name")
         commandSpan?.setTag(value: device.id.uuidString, key: "device_id")
         commandSpan?.setTag(value: device.deviceType.rawValue, key: "device_type")
         commandSpan?.setTag(value: "\(device.signalStrength)", key: "signal_strength")
+        commandSpan?.setTag(value: "true", key: "is_user_action")
         
         // Mobile Performance: Network-like characteristics
         commandSpan?.setTag(value: "bluetooth", key: "network_type")
@@ -190,8 +216,11 @@ class BluetoothService: ObservableObject {
                 throw BluetoothError.commandFailed(command)
             }
 
-            // Phase 2: Device Response (simulates network response)
-            let responseSpan = commandSpan?.startChild(operation: "device.response", description: "Device ACK: \(command)")
+            // Phase 2: Device Response as child of command span
+            let responseSpan = commandSpan?.startChild(
+                operation: "device.response", 
+                description: "Device ACK: \(command)"
+            )
             responseSpan?.setTag(value: device.deviceType.rawValue, key: "device_type")
             responseSpan?.setTag(value: "bluetooth_ack", key: "response_type")
             
@@ -231,6 +260,7 @@ class BluetoothService: ObservableObject {
                 category: "mobile.network.success"
             ))
             
+            print("✅ BLE Command '\(command)' completed successfully in \(totalLatency)ms")
             return response
 
         } catch {

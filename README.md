@@ -494,3 +494,106 @@ This project is created for demonstration purposes. The code structure and Sentr
 ---
 
 **Note**: This is a demonstration app with simulated Bluetooth functionality. It does not actually connect to real Bluetooth devices. The focus is on showcasing Sentry's monitoring and analytics capabilities in a realistic user experience context. 
+
+## 🎭 Demo Performance Issues (For Sentry Dashboard Testing)
+
+### 🚨 Artificially Poor Performance Scenarios
+
+To demonstrate how Sentry captures and visualizes performance issues, the app includes subtle performance problems for specific devices. **These issues are designed to be discovered through metrics analysis rather than obvious indicators.**
+
+#### **Scenario 1: Connection Success Rate Below 85%**
+- **Target Device:** "Bedroom Move" (Portable speaker)
+  - **Success Rate:** 40% (Will fail 6 out of 10 attempts)
+  - **Discovery Method:** Low success rate visible in connection dashboards
+
+- **Secondary Device:** "Basement Sub" (Subwoofer)
+  - **Success Rate:** 70% (Will fail 3 out of 10 attempts)  
+  - **Discovery Method:** Higher failure rate compared to other devices
+
+#### **Scenario 2: Laggy Audio Controls**
+- **Target Devices:** "Basement Sub" & "Kitchen One"
+- **Affected Controls:**
+  - **Skip Next:** 150ms delay (vs 20ms normal)
+  - **Skip Previous:** 180ms delay (vs 25ms normal)
+  - **Shuffle Playlist:** 250ms delay (vs 30ms normal)
+- **Discovery Method:** High P95 latency times in performance dashboards
+
+#### **Expected Dashboard Results:**
+1. **Connection Success Rate:** Will show ~75% overall (below 85% threshold)
+2. **Audio Control P95 Latency:** Will show >100ms for problematic devices
+3. **Device Breakdown:** Clear performance differences by device name
+
+### 📊 Demo Script for Presentations
+
+**Step 1: Show Baseline Performance**
+1. Connect to "Living Room Arc" or "Office Era 100" 
+2. Use audio controls → Should show normal performance (~20-30ms)
+3. **Discovery:** "Notice how responsive these controls feel"
+
+**Step 2: Demonstrate Connection Issues** 
+1. Try connecting to "Bedroom Move" multiple times
+2. **Discovery:** "Hmm, this device seems to fail a lot"
+3. Show Sentry dashboard → "Let's check our metrics to see what's happening"
+4. Point out success rate drops below 85%
+
+**Step 3: Demonstrate Laggy Controls**
+1. Connect to "Basement Sub" 
+2. Use skip/shuffle controls → "These controls feel sluggish"
+3. **Discovery:** "Let's investigate the performance data"
+4. Show Sentry dashboard → P95 latency >150ms for these devices
+
+**Step 4: Root Cause Analysis**
+1. Open Trace Explorer → Filter by `device_name:"Basement Sub"`
+2. Show span durations → "Look at these timing differences"
+3. **Discovery:** "We can see certain devices consistently perform worse"
+4. Correlate with device metadata and usage patterns
+
+### 🎯 Sentry Query Examples for Demo
+
+```sql
+-- Discover connection issues by examining success rates
+SELECT 
+    tags[device_name],
+    count_if(tags[connection_result] = 'failure') / count() * 100 as failure_rate
+FROM spans
+WHERE span.op = 'bt.connection'
+GROUP BY tags[device_name]
+ORDER BY failure_rate DESC
+
+-- Investigate audio control performance by device  
+SELECT 
+    tags[device_name],
+    tags[control_type],
+    percentile(span.duration, 0.95) as p95_latency_ms,
+    avg(span.duration) as avg_latency_ms
+FROM spans  
+WHERE span.op = 'ui.action.remoteControl'
+GROUP BY tags[device_name], tags[control_type]
+ORDER BY p95_latency_ms DESC
+```
+
+### 🔧 Reverting Demo Issues
+
+To return to normal performance, modify these values in the code:
+
+**BluetoothService.swift** (Line ~90):
+```swift
+// Change back to normal 95% success rate for all devices
+let willSucceed = Double.random(in: 0...1) > 0.05
+```
+
+**AudioPlayerService.swift** (Lines ~210, ~260, ~480):
+```swift  
+// Remove device-specific delays, set all to normal:
+artificialDelay = 0.02 // Normal delay for all devices
+```
+
+### 💡 **Key Demo Philosophy**
+
+The performance issues are **subtle and realistic** - developers discover problems through:
+- **Metrics Analysis:** High latency, low success rates
+- **Comparative Data:** Some devices perform worse than others  
+- **User Experience:** Noticeable lag during actual usage
+- **Trend Investigation:** Patterns emerge through dashboard analysis
+
+**No obvious "demo" or "artificial" tags** - issues are discovered the same way real performance problems would be found in production. 
