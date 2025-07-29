@@ -27,10 +27,19 @@ struct PlaylistView: View {
             .listStyle(PlainListStyle())
         }
         .onAppear {
+            // Create screen load span as part of the active session
+            let screenLoadSpan = SessionManager.shared.createScreenLoadSpan(screenName: "PlaylistView")
+            
             SentrySDK.addBreadcrumb(Breadcrumb(
                 level: .info,
                 category: "ui.navigation"
             ))
+            
+            // Finish screen load span after brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                screenLoadSpan?.setTag(value: "loaded", key: "load_status")
+                screenLoadSpan?.finish()
+            }
         }
     }
     
@@ -54,7 +63,10 @@ struct PlaylistView: View {
                     let deviceName = bluetoothService.connectedDevice?.name ?? "No Device"
                     let expectedLag = (deviceName == "Basement Sub" || deviceName == "Kitchen One") ? 225 : 30
                     
-                    let span = SentrySDK.span?.startChild(operation: "user.action.shuffle", description: "Shuffle Playlist")
+                    let span = SessionManager.shared.createUserInteractionSpan(
+                        action: "shuffle_button",
+                        screen: "PlaylistView"
+                    )
                     span?.setTag(value: "\(audioPlayer.isShuffled)", key: "shuffle_enabled")
                     span?.setTag(value: deviceName, key: "connected_device")
                     span?.setTag(value: "\(expectedLag)", key: "expected_lag_ms")
@@ -80,10 +92,15 @@ struct PlaylistView: View {
                 title: Text("Shuffle Playlist"),
                 message: Text("This will randomize the order of all tracks in your playlist."),
                 primaryButton: .default(Text("Shuffle")) {
-                    let transaction = SentrySDK.startTransaction(name: "Shuffle Playlist", operation: "user.action.shuffle")
+                    let span = SessionManager.shared.createUserInteractionSpan(
+                        action: "shuffle_confirm",
+                        screen: "PlaylistView"
+                    )
+                    span?.setTag(value: "user_initiated", key: "shuffle_source")
+                    span?.setTag(value: "confirmation_dialog", key: "trigger_method")
+                    
                     audioPlayer.shufflePlaylist()
-                    transaction.setTag(value: "user_initiated", key: "shuffle_source")
-                    transaction.finish()
+                    span?.finish()
                 },
                 secondaryButton: .cancel()
             )
@@ -93,7 +110,10 @@ struct PlaylistView: View {
     private func selectTrack(at index: Int) {
         guard index < audioPlayer.currentPlaylist.count else { return }
         
-        let span = SentrySDK.span?.startChild(operation: "user.action.track_select", description: "Select Track")
+        let span = SessionManager.shared.createUserInteractionSpan(
+            action: "track_select",
+            screen: "PlaylistView"
+        )
         span?.setTag(value: "\(index)", key: "track_index")
         span?.setTag(value: "\(audioPlayer.playbackState == .playing)", key: "was_playing")
         

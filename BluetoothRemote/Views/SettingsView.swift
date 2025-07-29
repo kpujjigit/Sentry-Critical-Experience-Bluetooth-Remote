@@ -20,7 +20,10 @@ struct SettingsView: View {
                             .padding(.bottom, 5)
                         
                         Button("Trigger Demo Error") {
-                            let span = SentrySDK.span?.startChild(operation: "user.action.error_trigger", description: "Trigger Demo Error")
+                            let span = SessionManager.shared.createUserInteractionSpan(
+                                action: "trigger_demo_error",
+                                screen: "SettingsView"
+                            )
                             SentrySDK.addBreadcrumb(Breadcrumb(
                                 level: .warning,
                                 category: "sentry.demo"
@@ -45,7 +48,10 @@ struct SettingsView: View {
                         .cornerRadius(8)
                         
                         Button("Simulate Native Crash") {
-                            let span = SentrySDK.span?.startChild(operation: "user.action.crash_simulate", description: "Simulate Native Crash")
+                            let span = SessionManager.shared.createUserInteractionSpan(
+                                action: "simulate_crash",
+                                screen: "SettingsView"
+                            )
                             SentrySDK.addBreadcrumb(Breadcrumb(
                                 level: .fatal,
                                 category: "sentry.demo"
@@ -81,7 +87,10 @@ struct SettingsView: View {
                         
                         Toggle("Verbose Logging", isOn: $isLoggingVerbose)
                             .onChange(of: isLoggingVerbose) { enabled in
-                                let span = SentrySDK.span?.startChild(operation: "settings.logging.toggle", description: "Toggle verbose logging")
+                                let span = SessionManager.shared.createUserInteractionSpan(
+                                    action: "toggle_logging",
+                                    screen: "SettingsView"
+                                )
                                 SentrySDK.addBreadcrumb(Breadcrumb(
                                     level: .info,
                                     category: "sentry.settings"
@@ -132,10 +141,19 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .onAppear {
+                // Create screen load span as part of the active session
+                let screenLoadSpan = SessionManager.shared.createScreenLoadSpan(screenName: "SettingsView")
+                
                 SentrySDK.addBreadcrumb(Breadcrumb(
                     level: .info,
                     category: "ui.navigation"
                 ))
+                
+                // Finish screen load span after brief delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    screenLoadSpan?.setTag(value: "loaded", key: "load_status")
+                    screenLoadSpan?.finish()
+                }
             }
         }
         .alert(isPresented: $showingErrorAlert) {
@@ -168,7 +186,10 @@ struct SentryDemoSheet: View {
                             .font(.headline)
                         
                         Button("Generate Random Breadcrumbs") {
-                            let span = SentrySDK.span?.startChild(operation: "demo.breadcrumbs.generate", description: "Generate demo breadcrumbs")
+                            let span = SessionManager.shared.createUserInteractionSpan(
+                                action: "generate_breadcrumbs",
+                                screen: "SettingsView"
+                            )
                             
                             for _ in 0..<3 {
                                 SentrySDK.addBreadcrumb(Breadcrumb(
@@ -185,7 +206,10 @@ struct SentryDemoSheet: View {
                         .cornerRadius(8)
                         
                                             Button("Start Performance Transaction") {
-                            let span = SentrySDK.span?.startChild(operation: "demo.performance.test", description: "Demo Long Operation")
+                            let span = SessionManager.shared.createUserInteractionSpan(
+                                action: "start_performance_test",
+                                screen: "SettingsView"
+                            )
                             // Simulate some async work
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 span?.setTag(value: "completed", key: "operation_status")

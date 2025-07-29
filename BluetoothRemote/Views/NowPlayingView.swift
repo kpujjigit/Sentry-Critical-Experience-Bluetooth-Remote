@@ -39,10 +39,19 @@ struct NowPlayingView: View {
             }
         }
         .onAppear {
+            // Create screen load span as part of the active session
+            let screenLoadSpan = SessionManager.shared.createScreenLoadSpan(screenName: "NowPlayingView")
+            
             SentrySDK.addBreadcrumb(Breadcrumb(
                 level: .info,
                 category: "ui.navigation"
             ))
+            
+            // Finish screen load span after brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                screenLoadSpan?.setTag(value: "loaded", key: "load_status")
+                screenLoadSpan?.finish()
+            }
         }
     }
     
@@ -157,9 +166,9 @@ struct NowPlayingView: View {
                     isDraggingSeeker = editing
                     if !editing {
                         // Seek to new position when user finishes dragging
-                        let span = SentrySDK.span?.startChild(
-                            operation: "ui.action.remoteControl", 
-                            description: "Audio Seek"
+                        let span = SessionManager.shared.createUserInteractionSpan(
+                            action: "audio_seek",
+                            screen: "NowPlayingView"
                         )
                         span?.setTag(value: "audio.seek", key: "control_type")
                         span?.setTag(value: "50", key: "ui_response_threshold_ms")
@@ -200,9 +209,9 @@ struct NowPlayingView: View {
                  let deviceName = bluetoothService.connectedDevice?.name ?? "No Device"
                  let expectedLag = (deviceName == "Basement Sub" || deviceName == "Kitchen One") ? 140 : 25
                  
-                 let span = SentrySDK.span?.startChild(
-                     operation: "ui.action.remoteControl", 
-                     description: "Skip Previous"
+                 let span = SessionManager.shared.createUserInteractionSpan(
+                     action: "skip_previous",
+                     screen: "NowPlayingView"
                  )
                  span?.setTag(value: "audio.control.previous", key: "control_type")
                  span?.setTag(value: "\(expectedLag)", key: "ui_response_threshold_ms")
@@ -223,10 +232,10 @@ struct NowPlayingView: View {
                  let deviceName = bluetoothService.connectedDevice?.name ?? "No Device"
                  let expectedLag = (deviceName == "Basement Sub" || deviceName == "Kitchen One") ? 120 : 30
                  
-                 // Create UI interaction as child of current active span
-                 let span = SentrySDK.span?.startChild(
-                     operation: "ui.action.remoteControl", 
-                     description: "Play/Pause Control"
+                 // Create UI interaction as part of the active session
+                 let span = SessionManager.shared.createUserInteractionSpan(
+                     action: "play_pause",
+                     screen: "NowPlayingView"
                  )
                  span?.setTag(value: "audio.control.playpause", key: "control_type")
                  span?.setTag(value: "\(expectedLag)", key: "ui_response_threshold_ms") // For ui.block_ms metric
@@ -269,9 +278,9 @@ struct NowPlayingView: View {
                  let deviceName = bluetoothService.connectedDevice?.name ?? "No Device"
                  let expectedLag = (deviceName == "Basement Sub" || deviceName == "Kitchen One") ? 150 : 25
                  
-                 let span = SentrySDK.span?.startChild(
-                     operation: "ui.action.remoteControl", 
-                     description: "Skip Next"
+                 let span = SessionManager.shared.createUserInteractionSpan(
+                     action: "skip_next",
+                     screen: "NowPlayingView"
                  )
                  span?.setTag(value: "audio.control.next", key: "control_type")
                  span?.setTag(value: "\(expectedLag)", key: "ui_response_threshold_ms")
@@ -297,9 +306,9 @@ struct NowPlayingView: View {
                 Spacer()
                 
                 Button(action: {
-                    let span = SentrySDK.span?.startChild(
-                        operation: "ui.action.remoteControl", 
-                        description: "Toggle mute from now playing"
+                    let span = SessionManager.shared.createUserInteractionSpan(
+                        action: "mute_toggle",
+                        screen: "NowPlayingView"
                     )
                     span?.setTag(value: "audio.mute.toggle", key: "control_type")
                     span?.setTag(value: "50", key: "ui_response_threshold_ms")
@@ -320,9 +329,9 @@ struct NowPlayingView: View {
                     value: Binding(
                         get: { audioPlayer.audioSettings.volume },
                         set: { newValue in
-                            let span = SentrySDK.span?.startChild(
-                                operation: "ui.action.remoteControl", 
-                                description: "Volume adjustment"
+                            let span = SessionManager.shared.createUserInteractionSpan(
+                                action: "volume_adjust",
+                                screen: "NowPlayingView"
                             )
                             span?.setTag(value: "audio.volume.adjust", key: "control_type")
                             span?.setTag(value: "50", key: "ui_response_threshold_ms")
@@ -358,7 +367,10 @@ struct NowPlayingView: View {
                 Spacer()
                 
                 Button("EQ Presets") {
-                    let span = SentrySDK.span?.startChild(operation: "ui.sheet.eq", description: "Show EQ presets")
+                    let span = SessionManager.shared.createUserInteractionSpan(
+                        action: "show_eq_presets",
+                        screen: "NowPlayingView"
+                    )
                     showingEQSheet = true
                     span?.finish()
                 }
@@ -381,7 +393,10 @@ struct NowPlayingView: View {
                     value: Binding(
                         get: { audioPlayer.audioSettings.bass },
                         set: { newValue in
-                            let span = SentrySDK.span?.startChild(operation: "audio.eq.bass", description: "Bass adjustment")
+                            let span = SessionManager.shared.createUserInteractionSpan(
+                                action: "eq_bass_adjust",
+                                screen: "NowPlayingView"
+                            )
                             audioPlayer.adjustBass(newValue)
                             span?.finish()
                         }
@@ -406,7 +421,10 @@ struct NowPlayingView: View {
                     value: Binding(
                         get: { audioPlayer.audioSettings.treble },
                         set: { newValue in
-                            let span = SentrySDK.span?.startChild(operation: "audio.eq.treble", description: "Treble adjustment")
+                            let span = SessionManager.shared.createUserInteractionSpan(
+                                action: "eq_treble_adjust",
+                                screen: "NowPlayingView"
+                            )
                             audioPlayer.adjustTreble(newValue)
                             span?.finish()
                         }
@@ -447,7 +465,10 @@ struct EQPresetSheet: View {
             List {
                 ForEach(AudioSettings.EQPreset.allCases, id: \.self) { preset in
                     Button(action: {
-                        let span = SentrySDK.span?.startChild(operation: "audio.eq.preset.apply", description: "Apply EQ Preset")
+                        let span = SessionManager.shared.createUserInteractionSpan(
+                            action: "apply_eq_preset",
+                            screen: "EQPresetSheet"
+                        )
                         span?.setTag(value: preset.displayName, key: "preset_name")
                         audioPlayer.applyEQPreset(preset)
                         span?.finish()

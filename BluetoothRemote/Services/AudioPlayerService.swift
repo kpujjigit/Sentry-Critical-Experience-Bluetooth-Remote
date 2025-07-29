@@ -220,10 +220,10 @@ class AudioPlayerService: ObservableObject {
             artificialDelay = 0.02 // Normal 20ms delay
         }
         
-        // Create performance tracking span
-        let skipSpan = SentrySDK.span?.startChild(
-            operation: "ui.action.remoteControl",
-            description: "Skip Next"
+        // Create performance tracking span as part of the active session
+        let skipSpan = SessionManager.shared.createUserInteractionSpan(
+            action: "skip_next",
+            screen: "AudioPlayer"
         )
         skipSpan?.setTag(value: "audio.control.next", key: "control_type")
         skipSpan?.setTag(value: deviceName, key: "device_name")
@@ -264,10 +264,10 @@ class AudioPlayerService: ObservableObject {
             artificialDelay = 0.025 // Normal 25ms delay
         }
         
-        // Create performance tracking span
-        let skipSpan = SentrySDK.span?.startChild(
-            operation: "ui.action.remoteControl",
-            description: "Skip Previous"
+        // Create performance tracking span as part of the active session
+        let skipSpan = SessionManager.shared.createUserInteractionSpan(
+            action: "skip_previous",
+            screen: "AudioPlayer"
         )
         skipSpan?.setTag(value: "audio.control.previous", key: "control_type")
         skipSpan?.setTag(value: deviceName, key: "device_name")
@@ -478,10 +478,10 @@ class AudioPlayerService: ObservableObject {
             artificialDelay = 0.03 // Normal 30ms delay
         }
         
-        // Create performance tracking span for shuffle
-        let shuffleSpan = SentrySDK.span?.startChild(
-            operation: "ui.action.remoteControl",
-            description: "Shuffle Playlist"
+        // Create performance tracking span for shuffle as part of the active session
+        let shuffleSpan = SessionManager.shared.createUserInteractionSpan(
+            action: "shuffle_playlist",
+            screen: "AudioPlayer"
         )
         shuffleSpan?.setTag(value: "playlist.shuffle", key: "control_type")
         shuffleSpan?.setTag(value: deviceName, key: "device_name")

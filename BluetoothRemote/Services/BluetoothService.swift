@@ -57,6 +57,12 @@ class BluetoothService: ObservableObject {
         
         isScanning = true
         
+        // Create scan span as part of the active session
+        let scanSpan = SessionManager.shared.createBluetoothSpan(
+            operation: "scan",
+            description: "Bluetooth Device Scan"
+        )
+        
         SentrySDK.addBreadcrumb(Breadcrumb(
             level: .info,
             category: "bluetooth.scan"
@@ -66,6 +72,10 @@ class BluetoothService: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.isScanning = false
             self.availableDevices = BluetoothDevice.generateSampleDevices()
+            
+            scanSpan?.setTag(value: "\(self.availableDevices.count)", key: "devices_found")
+            scanSpan?.setTag(value: "completed", key: "scan_status")
+            scanSpan?.finish()
         }
     }
     
@@ -77,10 +87,11 @@ class BluetoothService: ObservableObject {
             category: "bluetooth.connection"
         ))
         
-        // Create child span of the current active span (main session)
-        let connectionSpan = SentrySDK.span?.startChild(
-            operation: "bt.connection",
-            description: "Connect to Bluetooth Device: \(device.name)"
+        // Create connection span as part of the active session
+        let connectionSpan = SessionManager.shared.createBluetoothSpan(
+            operation: "connection",
+            description: "Connect to Bluetooth Device: \(device.name)",
+            deviceName: device.name
         )
         connectionSpan?.setTag(value: device.name, key: "device_name")
         connectionSpan?.setTag(value: device.deviceType.rawValue, key: "device_type")
@@ -164,10 +175,11 @@ class BluetoothService: ObservableObject {
             throw BluetoothError.deviceNotFound
         }
 
-        // Start BLE command span as child of current active span (main session)
-        let commandSpan = SentrySDK.span?.startChild(
-            operation: "bt.write.command", 
-            description: "BLE Command: \(command)"
+        // Create BLE command span as part of the active session
+        let commandSpan = SessionManager.shared.createBluetoothSpan(
+            operation: "write.command",
+            description: "BLE Command: \(command)",
+            deviceName: device.name
         )
         commandSpan?.setTag(value: command, key: "command_type")
         commandSpan?.setTag(value: device.name, key: "device_name")

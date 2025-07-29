@@ -15,12 +15,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Create service instances on main actor
         Task { @MainActor in
             do {
+                // Start user session for trace continuity
+                SessionManager.shared.startUserSession()
+                
                 let bluetoothService = BluetoothService()
                 let audioPlayerService = AudioPlayerService(bluetoothService: bluetoothService)
                 
                 let contentView = ContentView()
                     .environmentObject(bluetoothService)
                     .environmentObject(audioPlayerService)
+                    .environmentObject(SessionManager.shared)
                 
                 let hostingController = UIHostingController(rootView: contentView)
                 window?.rootViewController = hostingController
@@ -31,7 +35,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     category: "app.lifecycle"
                 ))
                 
-                print("✅ App UI setup completed")
+                print("✅ App UI setup completed with session: \(SessionManager.shared.sessionId ?? "unknown")")
                 
             } catch {
                 print("❌ Error setting up app UI: \(error)")
@@ -49,6 +53,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
+        // End user session when app disconnects
+        Task { @MainActor in
+            SessionManager.shared.finishUserSession()
+        }
+        
         SentrySDK.addBreadcrumb(Breadcrumb(
             level: .info,
             category: "app.lifecycle"
@@ -77,6 +86,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
+        // Update session context for background state
+        Task { @MainActor in
+            SessionManager.shared.updateSessionContext(
+                connectedDevice: nil,
+                currentTrack: nil,
+                playbackState: "background"
+            )
+        }
+        
         SentrySDK.addBreadcrumb(Breadcrumb(
             level: .info,
             category: "app.lifecycle"

@@ -15,6 +15,7 @@
 		AD1110010 /* BluetoothDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220010 /* BluetoothDevice.swift */; };
 		AD1110011 /* BluetoothService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220011 /* BluetoothService.swift */; };
 		AD1110012 /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220012 /* AudioPlayerService.swift */; };
+		AD1110013 /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220013 /* SessionManager.swift */; };
 		AD1110020 /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220020 /* NowPlayingView.swift */; };
 		AD1110021 /* PlaylistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220021 /* PlaylistView.swift */; };
 		AD1110022 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD2220022 /* SettingsView.swift */; };
@@ -32,6 +33,7 @@
 		AD2220010 /* BluetoothDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothDevice.swift; sourceTree = "<group>"; };
 		AD2220011 /* BluetoothService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothService.swift; sourceTree = "<group>"; };
 		AD2220012 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
+		AD2220013 /* SessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
 		AD2220020 /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
 		AD2220021 /* PlaylistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistView.swift; sourceTree = "<group>"; };
 		AD2220022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -94,6 +96,7 @@
 			children = (
 				AD2220011 /* BluetoothService.swift */,
 				AD2220012 /* AudioPlayerService.swift */,
+				AD2220013 /* SessionManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -212,6 +215,7 @@
 				AD1110010 /* BluetoothDevice.swift in Sources */,
 				AD1110011 /* BluetoothService.swift in Sources */,
 				AD1110012 /* AudioPlayerService.swift in Sources */,
+				AD1110013 /* SessionManager.swift in Sources */,
 				AD1110020 /* NowPlayingView.swift in Sources */,
 				AD1110021 /* PlaylistView.swift in Sources */,
 				AD1110022 /* SettingsView.swift in Sources */,

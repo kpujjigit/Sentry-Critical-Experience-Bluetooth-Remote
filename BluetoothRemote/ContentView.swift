@@ -4,10 +4,35 @@ import Sentry
 struct ContentView: View {
     @EnvironmentObject private var bluetoothService: BluetoothService
     @EnvironmentObject private var audioPlayer: AudioPlayerService
+    @EnvironmentObject private var sessionManager: SessionManager
     @State private var selectedTab: MainTab = .devices
     @State private var showingDeviceSelection = false
     @State private var showingSettings = false
     @State private var showingConnectionError = false
+    
+    // MARK: - Helper Functions
+    
+    private func connectToDevice(_ device: BluetoothDevice) {
+        let span = sessionManager.createUserInteractionSpan(
+            action: "device_connection",
+            screen: "DevicesView"
+        )
+        span?.setTag(value: device.name, key: "device_name")
+        span?.setTag(value: device.deviceType.rawValue, key: "device_type")
+        span?.setTag(value: "connection_attempt", key: "action_type")
+        
+        bluetoothService.connectToDevice(device)
+        
+        // Update session context after connection attempt
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            sessionManager.updateSessionContext(
+                connectedDevice: bluetoothService.connectedDevice?.name,
+                currentTrack: audioPlayer.currentTrack?.title,
+                playbackState: audioPlayer.playbackState.rawValue
+            )
+            span?.finish()
+        }
+    }
     
     enum MainTab: String, CaseIterable {
         case devices = "devices"
@@ -42,7 +67,10 @@ struct ContentView: View {
                 
                 // Main Content
                 TabView(selection: $selectedTab) {
-                    DevicesView(bluetoothService: bluetoothService)
+                    DevicesView(
+                        bluetoothService: bluetoothService,
+                        connectToDevice: connectToDevice
+                    )
                         .tabItem {
                             Image(systemName: MainTab.devices.icon)
                             Text(MainTab.devices.title)
@@ -84,18 +112,20 @@ struct ContentView: View {
             .navigationBarHidden(true)
         }
         .onAppear {
-            // SwiftUI Screen Load - Only needed because UIViewController tracing doesn't work for SwiftUI
-            let screenLoadSpan = SentrySDK.span?.startChild(
-                operation: "ui.load",
-                description: "SwiftUI Screen Load: ContentView"
-            )
-            screenLoadSpan?.setTag(value: "ContentView", key: "screen_name")
-            screenLoadSpan?.setTag(value: "swiftui", key: "ui_framework")
+            // Create screen load span as part of the active session
+            let screenLoadSpan = sessionManager.createScreenLoadSpan(screenName: "ContentView")
             
             SentrySDK.addBreadcrumb(Breadcrumb(
                 level: .info,
                 category: "ui.navigation"
             ))
+            
+            // Update session context with initial app state
+            sessionManager.updateSessionContext(
+                connectedDevice: bluetoothService.connectedDevice?.name,
+                currentTrack: audioPlayer.currentTrack?.title,
+                playbackState: audioPlayer.playbackState.rawValue
+            )
             
             // Simulate TTFD for SwiftUI (since Sentry's TTFD only works for UIViewController)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -105,14 +135,13 @@ struct ContentView: View {
             }
         }
         .onChange(of: selectedTab) { newTab in
-            // SwiftUI Navigation - Only needed because User Interaction Tracing is unavailable for SwiftUI
-            let navigationSpan = SentrySDK.span?.startChild(
-                operation: "ui.action",
-                description: "SwiftUI Tab Navigation"
+            // Create tab navigation span as part of the active session
+            let navigationSpan = sessionManager.createUserInteractionSpan(
+                action: "tab_navigation",
+                screen: "ContentView"
             )
             navigationSpan?.setTag(value: newTab.rawValue, key: "destination_tab")
-            navigationSpan?.setTag(value: "tab_navigation", key: "interaction_type")
-            navigationSpan?.setTag(value: "swiftui", key: "ui_framework")
+            navigationSpan?.setTag(value: "tab_switch", key: "interaction_type")
             
             SentrySDK.addBreadcrumb(Breadcrumb(
                 level: .info,
@@ -168,6 +197,7 @@ struct ContentView: View {
 struct DevicesView: View {
     @ObservedObject var bluetoothService: BluetoothService
     @State private var showingConnectionError = false
+    let connectToDevice: (BluetoothDevice) -> Void
     
     var body: some View {
         VStack(spacing: 0) {
@@ -180,7 +210,10 @@ struct DevicesView: View {
                 Spacer()
                 
                 Button(action: {
-                    let span = SentrySDK.span?.startChild(operation: "user.action.scan", description: "Device Scan")
+                    let span = SessionManager.shared.createUserInteractionSpan(
+                        action: "device_scan",
+                        screen: "DevicesView"
+                    )
                     if !bluetoothService.isScanning {
                         bluetoothService.startScanning()
                     }
@@ -219,7 +252,10 @@ struct DevicesView: View {
             
             // Refresh Button
             Button(action: {
-                let span = SentrySDK.span?.startChild(operation: "ui.action.refresh", description: "Refresh device list")
+                let span = SessionManager.shared.createUserInteractionSpan(
+                    action: "refresh_devices",
+                    screen: "DevicesView"
+                )
                 bluetoothService.refreshDevices()
                 span?.finish()
             }) {
@@ -248,14 +284,6 @@ struct DevicesView: View {
                 showingConnectionError = true
             }
         }
-    }
-    
-    private func connectToDevice(_ device: BluetoothDevice) {
-        let span = SentrySDK.span?.startChild(operation: "user.action.connect", description: "Device Connection")
-        span?.setTag(value: device.name, key: "device_name")
-        span?.setTag(value: device.deviceType.rawValue, key: "device_type")
-        bluetoothService.connectToDevice(device)
-        span?.finish()
     }
 }
 
@@ -379,7 +407,10 @@ struct MiniPlayerView: View {
                 
                 // Play/Pause Button
                 Button(action: {
-                    let span = SentrySDK.span?.startChild(operation: "audio.control.mini", description: "Mini player control")
+                    let span = SessionManager.shared.createUserInteractionSpan(
+                        action: "mini_player_control",
+                        screen: "MiniPlayer"
+                    )
                     
                     if audioPlayer.playbackState == .playing {
                         audioPlayer.pause()
@@ -399,7 +430,10 @@ struct MiniPlayerView: View {
             .padding(.vertical, 8)
             .contentShape(Rectangle())
             .onTapGesture {
-                let span = SentrySDK.span?.startChild(operation: "ui.navigation.mini_player", description: "Expand mini player")
+                let span = SessionManager.shared.createUserInteractionSpan(
+                    action: "expand_mini_player",
+                    screen: "MiniPlayer"
+                )
                 onExpand()
                 span?.finish()
             }
