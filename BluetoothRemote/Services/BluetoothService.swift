@@ -73,7 +73,7 @@ class BluetoothService: ObservableObject {
             self.isScanning = false
             self.availableDevices = BluetoothDevice.generateSampleDevices()
             
-            scanSpan?.setTag(value: "\(self.availableDevices.count)", key: "devices_found")
+            scanSpan?.setData(value: self.availableDevices.count, key: "devices_found")
             scanSpan?.setTag(value: "completed", key: "scan_status")
             scanSpan?.finish()
         }
@@ -95,7 +95,7 @@ class BluetoothService: ObservableObject {
         )
         connectionSpan?.setTag(value: device.name, key: "device_name")
         connectionSpan?.setTag(value: device.deviceType.rawValue, key: "device_type")
-        connectionSpan?.setTag(value: "\(device.signalStrength)", key: "signal_strength")
+        connectionSpan?.setData(value: device.signalStrength, key: "signal_strength")
         connectionSpan?.setTag(value: "true", key: "is_user_action")
         
         // 🎯 DEMO: Create poor connection rates for specific devices
@@ -185,7 +185,7 @@ class BluetoothService: ObservableObject {
         commandSpan?.setTag(value: device.name, key: "device_name")
         commandSpan?.setTag(value: device.id.uuidString, key: "device_id")
         commandSpan?.setTag(value: device.deviceType.rawValue, key: "device_type")
-        commandSpan?.setTag(value: "\(device.signalStrength)", key: "signal_strength")
+        commandSpan?.setData(value: device.signalStrength, key: "signal_strength")
         commandSpan?.setTag(value: "true", key: "is_user_action")
         
         // Mobile Performance: Network-like characteristics
@@ -194,7 +194,7 @@ class BluetoothService: ObservableObject {
         
         // Add battery level if available (for portable devices)
         if let batteryLevel = device.batteryLevel {
-            commandSpan?.setTag(value: "\(batteryLevel)", key: "battery_level")
+            commandSpan?.setData(value: batteryLevel, key: "battery_level")
         }
 
         // Mobile Vitals: Network request breadcrumb
@@ -215,7 +215,7 @@ class BluetoothService: ObservableObject {
             
             if !willSucceed {
                 commandSpan?.setTag(value: "failed", key: "command_status")
-                commandSpan?.setTag(value: "\(writeLatency)", key: "write_latency_ms")
+                commandSpan?.setData(value: writeLatency, key: "write_latency_ms")
                 commandSpan?.setTag(value: "timeout", key: "failure_reason")
                 commandSpan?.finish()
                 
@@ -244,13 +244,13 @@ class BluetoothService: ObservableObject {
             
             // Tag spans with Mobile Performance metrics
             commandSpan?.setTag(value: "success", key: "command_status")
-            commandSpan?.setTag(value: "\(writeLatency)", key: "write_latency_ms")
-            commandSpan?.setTag(value: "\(totalLatency)", key: "total_latency_ms")
-            commandSpan?.setTag(value: "\(requestDuration)", key: "request_duration_ms")
+            commandSpan?.setData(value: writeLatency, key: "write_latency_ms")
+            commandSpan?.setData(value: totalLatency, key: "total_latency_ms")
+            commandSpan?.setData(value: requestDuration, key: "request_duration_ms")
             
-            responseSpan?.setTag(value: "\(ackLatency)", key: "ack_latency_ms")
+            responseSpan?.setData(value: ackLatency, key: "ack_latency_ms")
             responseSpan?.setTag(value: "received", key: "ack_status")
-            responseSpan?.setTag(value: "200", key: "status_code") // Simulate HTTP-like status
+            responseSpan?.setData(value: 200, key: "status_code") // Simulate HTTP-like status
             
             // Return simulated device response with performance metrics
             let response = [

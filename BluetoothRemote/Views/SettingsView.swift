@@ -198,7 +198,7 @@ struct SentryDemoSheet: View {
                                 ))
                             }
                             
-                            span?.setTag(value: "3", key: "breadcrumbs_generated")
+                            span?.setData(value: 3, key: "breadcrumbs_generated")
                             span?.finish()
                         }
                         .padding()

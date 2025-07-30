@@ -321,7 +321,7 @@ class AudioPlayerService: ObservableObject {
                     description: "Update volume UI state"
                 )
                 renderSpan?.setTag(value: "volume_change", key: "state_change")
-                renderSpan?.setTag(value: "\(Int(clampedVolume * 100))", key: "volume_percent")
+                renderSpan?.setData(value: Int(clampedVolume * 100), key: "volume_percent")
                 renderSpan?.setTag(value: "true", key: "is_mobile_vital")
                 renderSpan?.finish()
                 
@@ -349,7 +349,7 @@ class AudioPlayerService: ObservableObject {
                     description: "Update EQ UI state"
                 )
                 renderSpan?.setTag(value: "eq_bass", key: "state_change")
-                renderSpan?.setTag(value: "\(Int(clampedBass * 100))", key: "bass_level")
+                renderSpan?.setData(value: Int(clampedBass * 100), key: "bass_level")
                 renderSpan?.setTag(value: "true", key: "is_mobile_vital")
                 renderSpan?.finish()
                 

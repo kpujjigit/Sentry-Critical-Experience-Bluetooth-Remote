@@ -171,9 +171,9 @@ struct NowPlayingView: View {
                             screen: "NowPlayingView"
                         )
                         span?.setTag(value: "audio.seek", key: "control_type")
-                        span?.setTag(value: "50", key: "ui_response_threshold_ms")
+                        span?.setData(value: 50, key: "ui_response_threshold_ms")
                         span?.setTag(value: "true", key: "is_user_action")
-                        span?.setTag(value: "\(seekerValue)", key: "seek_time")
+                        span?.setData(value: seekerValue, key: "seek_time")
                         audioPlayer.seekTo(seekerValue)
                         span?.finish()
                     }
@@ -214,7 +214,7 @@ struct NowPlayingView: View {
                      screen: "NowPlayingView"
                  )
                  span?.setTag(value: "audio.control.previous", key: "control_type")
-                 span?.setTag(value: "\(expectedLag)", key: "ui_response_threshold_ms")
+                 span?.setData(value: expectedLag, key: "ui_response_threshold_ms")
                  span?.setTag(value: "true", key: "is_user_action")
                  span?.setTag(value: deviceName, key: "connected_device")
                  
@@ -238,7 +238,7 @@ struct NowPlayingView: View {
                      screen: "NowPlayingView"
                  )
                  span?.setTag(value: "audio.control.playpause", key: "control_type")
-                 span?.setTag(value: "\(expectedLag)", key: "ui_response_threshold_ms") // For ui.block_ms metric
+                 span?.setData(value: expectedLag, key: "ui_response_threshold_ms") // For ui.block_ms metric
                  span?.setTag(value: "true", key: "is_user_action")
                  span?.setTag(value: deviceName, key: "connected_device")
                  
@@ -283,7 +283,7 @@ struct NowPlayingView: View {
                      screen: "NowPlayingView"
                  )
                  span?.setTag(value: "audio.control.next", key: "control_type")
-                 span?.setTag(value: "\(expectedLag)", key: "ui_response_threshold_ms")
+                 span?.setData(value: expectedLag, key: "ui_response_threshold_ms")
                  span?.setTag(value: "true", key: "is_user_action")
                  span?.setTag(value: deviceName, key: "connected_device")
                  
@@ -311,7 +311,7 @@ struct NowPlayingView: View {
                         screen: "NowPlayingView"
                     )
                     span?.setTag(value: "audio.mute.toggle", key: "control_type")
-                    span?.setTag(value: "50", key: "ui_response_threshold_ms")
+                    span?.setData(value: 50, key: "ui_response_threshold_ms")
                     span?.setTag(value: "true", key: "is_user_action")
                     audioPlayer.toggleMute()
                     span?.finish()
@@ -334,10 +334,10 @@ struct NowPlayingView: View {
                                 screen: "NowPlayingView"
                             )
                             span?.setTag(value: "audio.volume.adjust", key: "control_type")
-                            span?.setTag(value: "50", key: "ui_response_threshold_ms")
+                            span?.setData(value: 50, key: "ui_response_threshold_ms")
                             span?.setTag(value: "true", key: "is_user_action")
                             audioPlayer.adjustVolume(newValue)
-                            span?.setTag(value: "\(newValue)", key: "volume_level")
+                            span?.setData(value: newValue, key: "volume_level")
                             span?.finish()
                         }
                     ),

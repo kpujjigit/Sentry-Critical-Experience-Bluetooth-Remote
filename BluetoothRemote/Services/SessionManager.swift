@@ -43,7 +43,7 @@ class SessionManager: ObservableObject {
         
         if let startTime = sessionStartTime {
             let sessionDuration = Date().timeIntervalSince(startTime)
-            transaction.setTag(value: "\(Int(sessionDuration))", key: "session_duration_seconds")
+            transaction.setData(value: Int(sessionDuration), key: "session_duration_seconds")
         }
         
         transaction.setTag(value: "completed", key: "session_status")
@@ -118,7 +118,7 @@ class SessionManager: ObservableObject {
         sessionTransaction?.setTag(value: connectedDevice ?? "none", key: "connected_device")
         sessionTransaction?.setTag(value: currentTrack ?? "none", key: "current_track")
         sessionTransaction?.setTag(value: playbackState ?? "stopped", key: "playback_state")
-        sessionTransaction?.setTag(value: "\(Date().timeIntervalSince1970)", key: "last_updated")
+        sessionTransaction?.setData(value: Int(Date().timeIntervalSince1970), key: "last_updated")
     }
     
     // MARK: - Session Health
