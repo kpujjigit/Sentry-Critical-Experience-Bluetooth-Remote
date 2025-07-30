@@ -68,14 +68,94 @@ class BluetoothService: ObservableObject {
             category: "bluetooth.scan"
         ))
         
-        // Simulate device discovery
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        // 🎯 DEMO: Create artificial scan failure scenarios (50% chance to fail)
+        let scanOutcome = Double.random(in: 0...1)
+        let scanDelay = Double.random(in: 1.5...4.0) // Variable scan time
+        
+        // Simulate device discovery with potential failures
+        DispatchQueue.main.asyncAfter(deadline: .now() + scanDelay) {
             self.isScanning = false
-            self.availableDevices = BluetoothDevice.generateSampleDevices()
             
-            scanSpan?.setData(value: self.availableDevices.count, key: "devices_found")
-            scanSpan?.setTag(value: "completed", key: "scan_status")
+            if scanOutcome > 0.5 {
+                // 50% Success - Full device discovery
+                self.availableDevices = BluetoothDevice.generateSampleDevices()
+                scanSpan?.setData(value: self.availableDevices.count, key: "devices_found")
+                scanSpan?.setTag(value: "completed", key: "scan_status")
+                scanSpan?.setTag(value: "success", key: "scan_result")
+                
+                print("✅ Bluetooth scan completed successfully - found \(self.availableDevices.count) devices")
+                
+            } else {
+                // 50% Failure scenarios with different outcomes
+                let failureType = Double.random(in: 0...1)
+                
+                if failureType < 0.3 {
+                    // 30% of failures: Complete scan failure - no devices found
+                    self.availableDevices = []
+                    self.lastError = .scanningFailed
+                    
+                    scanSpan?.setData(value: 0, key: "devices_found")
+                    scanSpan?.setTag(value: "failure", key: "scan_status")
+                    scanSpan?.setTag(value: "no_devices", key: "failure_reason")
+                    scanSpan?.setTag(value: "bluetooth_timeout", key: "scan_result")
+                    
+                    SentrySDK.capture(error: BluetoothError.scanningFailed)
+                    print("❌ Bluetooth scan failed - no devices found")
+                    
+                } else if failureType < 0.6 {
+                    // 30% of failures: Partial scan - only find 1-2 devices
+                    let fullDevices = BluetoothDevice.generateSampleDevices()
+                    let partialCount = Int.random(in: 1...2)
+                    self.availableDevices = Array(fullDevices.prefix(partialCount))
+                    
+                    scanSpan?.setData(value: self.availableDevices.count, key: "devices_found")
+                    scanSpan?.setTag(value: "partial", key: "scan_status")
+                    scanSpan?.setTag(value: "incomplete_discovery", key: "failure_reason")
+                    scanSpan?.setTag(value: "degraded_signal", key: "scan_result")
+                    
+                    print("⚠️ Bluetooth scan partially failed - only found \(self.availableDevices.count) devices")
+                    
+                } else {
+                    // 40% of failures: Scan timeout - return cached/stale devices
+                    let staleDevices = BluetoothDevice.generateSampleDevices().map { device in
+                        BluetoothDevice(
+                            name: device.name,
+                            deviceType: device.deviceType,
+                            signalStrength: max(20, device.signalStrength - 30), // Weaker signals
+                            isConnected: false,
+                            batteryLevel: device.batteryLevel,
+                            lastSeen: Date().addingTimeInterval(-600) // 10 minutes ago
+                        )
+                    }
+                    let staleCount = Int.random(in: 2...3)
+                    self.availableDevices = Array(staleDevices.prefix(staleCount))
+                    self.lastError = .connectionTimeout
+                    
+                    scanSpan?.setData(value: self.availableDevices.count, key: "devices_found")
+                    scanSpan?.setTag(value: "timeout", key: "scan_status")
+                    scanSpan?.setTag(value: "scan_timeout", key: "failure_reason")
+                    scanSpan?.setTag(value: "stale_cache", key: "scan_result")
+                    scanSpan?.setTag(value: "true", key: "using_cached_results")
+                    
+                    print("⏱️ Bluetooth scan timed out - using cached devices (\(self.availableDevices.count) found)")
+                }
+            }
+            
+            scanSpan?.setData(value: Int(scanDelay * 1000), key: "scan_duration_ms")
             scanSpan?.finish()
+            
+            // Add appropriate breadcrumbs for different outcomes
+            if scanOutcome > 0.5 {
+                SentrySDK.addBreadcrumb(Breadcrumb(
+                    level: .info,
+                    category: "bluetooth.scan.success"
+                ))
+            } else {
+                SentrySDK.addBreadcrumb(Breadcrumb(
+                    level: .warning,
+                    category: "bluetooth.scan.failure"
+                ))
+            }
         }
     }
     
