@@ -13,6 +13,12 @@ struct SettingsView: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    // Sentry Data Simulation
+                    SentryDataSimulatorView(
+                        bluetoothService: bluetoothService,
+                        audioPlayer: audioPlayer
+                    )
+                    
                     // Sentry Demo Features
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Sentry Demo Features")
@@ -268,6 +274,349 @@ struct SentryDemoSheet: View {
             .navigationBarItems(trailing: Button("Done") {
                 presentationMode.wrappedValue.dismiss()
             })
+    }
+}
+
+// MARK: - Sentry Data Simulator
+
+@MainActor
+class SentryDataSimulator: ObservableObject {
+    @Published var isSimulating = false
+    @Published var simulationProgress = 0
+    @Published var totalSessions = 0
+    
+    private let bluetoothService: BluetoothService
+    private let audioPlayer: AudioPlayerService
+    
+    init(bluetoothService: BluetoothService, audioPlayer: AudioPlayerService) {
+        self.bluetoothService = bluetoothService
+        self.audioPlayer = audioPlayer
+    }
+    
+    func runSimulation(sessionCount: Int = 150) async {
+        await MainActor.run {
+            isSimulating = true
+            simulationProgress = 0
+            totalSessions = sessionCount
+        }
+        
+        print("🎬 Starting simulation: \(sessionCount) user sessions")
+        print("📊 Generating dashboard data for span operations:")
+        print("   • bt.write.command (Command Latency)")
+        print("   • device.response (ACK Response Times)")
+        print("   • bt.connection (Connection Success Rates)")
+        print("   • ui.action.user (UI Responsiveness)")
+        print("   • ui.screen.load (Screen Load Performance)")
+        print("")
+        
+        for sessionNum in 1...sessionCount {
+            await simulateUserSession(sessionId: sessionNum)
+            
+            await MainActor.run {
+                simulationProgress = sessionNum
+            }
+            
+            // Small delay to spread events over time  
+            try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 50...200) * 1_000_000))
+        }
+        
+        await MainActor.run {
+            isSimulating = false
+        }
+        
+        print("\n🎉 Simulation Complete!")
+        print("📈 Check Sentry for generated metrics in:")
+        print("   • Performance > Transactions")
+        print("   • Discover > Spans")
+        print("   • Your custom dashboards")
+    }
+    
+    private func simulateUserSession(sessionId: Int) async {
+        let personas = ["happy_user", "impatient_user", "power_user", "casual_user", "troubled_user"]
+        let scenarios = ["optimal", "weak_signal", "interference", "low_battery", "firmware_lag"]
+        let devices = BluetoothDevice.generateSampleDevices()
+        
+        let persona = personas.randomElement()!
+        let scenario = scenarios.randomElement()!
+        let device = devices.randomElement()!
+        
+        let sessionTransaction = SentrySDK.startTransaction(
+            name: "User Session - \(persona)",
+            operation: "app.session"
+        )
+        
+        sessionTransaction.setTag(value: persona, key: "user_persona")
+        sessionTransaction.setTag(value: scenario, key: "device_scenario")
+        sessionTransaction.setTag(value: "simulation", key: "data_source")
+        sessionTransaction.setTag(value: device.name, key: "target_device")
+        
+        SentrySDK.setUser(User(userId: "\(persona)-\(String(format: "%03d", sessionId))"))
+        
+        let actionCount = Int.random(in: 5...15)
+        let errorRate = persona == "troubled_user" ? 0.2 : 0.05
+        
+        print("👤 Session \(sessionId): \(persona) → \(device.name) (\(scenario))")
+        
+        // 1. Screen Load Simulation
+        await simulateScreenLoad("ContentView", scenario: scenario, transaction: sessionTransaction)
+        
+        // 2. Device Connection Simulation
+        await simulateDeviceConnection(device, scenario: scenario, transaction: sessionTransaction)
+        
+        // 3. Multiple Audio Commands
+        for _ in 1...actionCount {
+            await simulateAudioCommand(
+                device: device,
+                scenario: scenario,
+                transaction: sessionTransaction,
+                shouldFail: Double.random(in: 0...1) < errorRate
+            )
+            
+            // User delay between actions
+            let delay = Double.random(in: 0.3...2.0)
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        }
+        
+        sessionTransaction.finish()
+    }
+    
+    private func simulateScreenLoad(_ screenName: String, scenario: String, transaction: Span) async {
+        let loadSpan = transaction.startChild(
+            operation: "ui.screen.load",
+            description: "Load \(screenName)"
+        )
+        
+        loadSpan.setTag(value: screenName, key: "screen_name")
+        loadSpan.setTag(value: "swiftui", key: "ui_framework")
+        loadSpan.setTag(value: scenario, key: "device_scenario")
+        
+        let baseLoadTime = Double.random(in: 80...180)
+        let scenarioMultiplier = scenario == "optimal" ? 1.0 : Double.random(in: 1.5...2.5)
+        let loadTime = baseLoadTime * scenarioMultiplier
+        
+        try? await Task.sleep(nanoseconds: UInt64(loadTime * 1_000_000))
+        
+        loadSpan.setData(value: loadTime, key: "load_time_ms")
+        loadSpan.setTag(value: loadTime > 400 ? "slow" : "normal", key: "load_performance")
+        loadSpan.finish()
+    }
+    
+    private func simulateDeviceConnection(_ device: BluetoothDevice, scenario: String, transaction: Span) async {
+        let connectionSpan = transaction.startChild(
+            operation: "bt.connection",
+            description: "Connect to \(device.name)"
+        )
+        
+        connectionSpan.setTag(value: device.name, key: "device_name")
+        connectionSpan.setTag(value: device.deviceType.rawValue, key: "device_type")
+        connectionSpan.setTag(value: scenario, key: "device_scenario")
+        connectionSpan.setData(value: device.signalStrength, key: "signal_strength")
+        
+        if let battery = device.batteryLevel {
+            connectionSpan.setData(value: battery, key: "battery_level")
+        }
+        
+        let baseConnectionTime = Double.random(in: 800...2500)
+        let scenarioImpact = scenario == "optimal" ? 1.0 : Double.random(in: 1.5...3.0)
+        let connectionTime = baseConnectionTime * scenarioImpact
+        
+        try? await Task.sleep(nanoseconds: UInt64(connectionTime * 1_000_000))
+        
+        let successRate = scenario == "optimal" ? 0.98 : 0.85
+        let willSucceed = Double.random(in: 0...1) < successRate
+        
+        if willSucceed {
+            connectionSpan.setTag(value: "success", key: "connection_result")
+            connectionSpan.setData(value: connectionTime, key: "connection_time_ms")
+            print("  ✅ Connected in \(Int(connectionTime))ms")
+        } else {
+            connectionSpan.setTag(value: "failed", key: "connection_result")
+            connectionSpan.setTag(value: "timeout", key: "failure_reason")
+            
+            let error = NSError(
+                domain: "BluetoothConnectionError",
+                code: 1001,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Failed to connect to \(device.name)",
+                    "device_scenario": scenario,
+                    "signal_strength": device.signalStrength
+                ]
+            )
+            SentrySDK.capture(error: error)
+            print("  ❌ Connection failed")
+        }
+        
+        connectionSpan.finish()
+    }
+    
+    private func simulateAudioCommand(device: BluetoothDevice, scenario: String, transaction: Span, shouldFail: Bool = false) async {
+        let commands = ["PLAY", "PAUSE", "VOLUME_UP", "VOLUME_DOWN", "NEXT_TRACK", "PREV_TRACK", "SHUFFLE"]
+        let command = commands.randomElement()!
+        
+        let commandSpan = transaction.startChild(
+            operation: "bt.write.command",
+            description: "BLE Command: \(command)"
+        )
+        
+        // Tag with dashboard-relevant attributes
+        commandSpan.setTag(value: command, key: "command_type")
+        commandSpan.setTag(value: device.name, key: "device_name")
+        commandSpan.setTag(value: device.deviceType.rawValue, key: "device_type")
+        commandSpan.setTag(value: scenario, key: "device_scenario")
+        commandSpan.setTag(value: "true", key: "is_user_action")
+        commandSpan.setTag(value: "bluetooth", key: "network_type")
+        commandSpan.setData(value: device.signalStrength, key: "signal_strength")
+        
+        let baseWriteLatency = Double.random(in: 15...80)
+        let baseAckLatency = Double.random(in: 20...120)
+        let scenarioMultiplier = scenario == "optimal" ? 1.0 : Double.random(in: 1.5...3.0)
+        
+        let writeLatency = baseWriteLatency * scenarioMultiplier
+        let ackLatency = baseAckLatency * scenarioMultiplier
+        
+        // Simulate write phase
+        try? await Task.sleep(nanoseconds: UInt64(writeLatency * 1_000_000))
+        
+        if shouldFail {
+            commandSpan.setTag(value: "failed", key: "command_status")
+            commandSpan.setTag(value: "timeout", key: "failure_reason")
+            commandSpan.setData(value: writeLatency, key: "write_latency_ms")
+            
+            let error = NSError(
+                domain: "BluetoothCommandError",
+                code: 2001,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Command \(command) failed",
+                    "command_type": command,
+                    "device_name": device.name,
+                    "device_scenario": scenario
+                ]
+            )
+            SentrySDK.capture(error: error)
+            
+            commandSpan.finish()
+            print("    ❌ \(command) failed")
+            return
+        }
+        
+        // Simulate ACK response
+        let responseSpan = commandSpan.startChild(
+            operation: "device.response",
+            description: "Device ACK: \(command)"
+        )
+        
+        responseSpan.setTag(value: device.deviceType.rawValue, key: "device_type")
+        responseSpan.setTag(value: "bluetooth_ack", key: "response_type")
+        responseSpan.setTag(value: scenario, key: "device_scenario")
+        
+        try? await Task.sleep(nanoseconds: UInt64(ackLatency * 1_000_000))
+        
+        let totalLatency = writeLatency + ackLatency
+        
+        // Tag with metrics for dashboard queries
+        commandSpan.setTag(value: "success", key: "command_status")
+        commandSpan.setData(value: writeLatency, key: "write_latency_ms")
+        commandSpan.setData(value: totalLatency, key: "total_latency_ms")
+        
+        responseSpan.setData(value: ackLatency, key: "ack_latency_ms")
+        responseSpan.setTag(value: "received", key: "ack_status")
+        responseSpan.setData(value: 200, key: "status_code")
+        
+        // Simulate UI state update
+        let renderSpan = commandSpan.startChild(
+            operation: "ui.state.render",
+            description: "Update UI after \(command)"
+        )
+        
+        renderSpan.setTag(value: command.lowercased(), key: "state_change")
+        renderSpan.setTag(value: "true", key: "is_mobile_vital")
+        
+        let renderTime = min(totalLatency * 0.15, 80.0)
+        try? await Task.sleep(nanoseconds: UInt64(renderTime * 1_000_000))
+        
+        renderSpan.setData(value: renderTime, key: "render_time_ms")
+        renderSpan.finish()
+        
+        responseSpan.finish()
+        commandSpan.finish()
+        
+        print("    ✅ \(command): \(Int(totalLatency))ms total (\(Int(writeLatency))ms write + \(Int(ackLatency))ms ack)")
+    }
+}
+
+struct SentryDataSimulatorView: View {
+    @StateObject private var simulator: SentryDataSimulator
+    @State private var sessionCount = 150
+    
+    init(bluetoothService: BluetoothService, audioPlayer: AudioPlayerService) {
+        self._simulator = StateObject(wrappedValue: SentryDataSimulator(
+            bluetoothService: bluetoothService,
+            audioPlayer: audioPlayer
+        ))
+    }
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Sentry Dashboard Data Simulator")
+                .font(.title2)
+                .fontWeight(.bold)
+            
+            Text("Generate test data for performance dashboards")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            HStack {
+                Text("Sessions:")
+                Stepper("\(sessionCount)", value: $sessionCount, in: 50...500, step: 25)
+                    .disabled(simulator.isSimulating)
+            }
+            
+            if simulator.isSimulating {
+                VStack {
+                    ProgressView(value: Double(simulator.simulationProgress), total: Double(simulator.totalSessions))
+                    Text("\(simulator.simulationProgress) of \(simulator.totalSessions) sessions")
+                        .font(.caption)
+                }
+            }
+            
+            Button(action: {
+                Task {
+                    await simulator.runSimulation(sessionCount: sessionCount)
+                }
+            }) {
+                HStack {
+                    Image(systemName: simulator.isSimulating ? "stop.circle" : "play.circle")
+                    Text(simulator.isSimulating ? "Running..." : "Start Simulation")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(simulator.isSimulating ? Color.red : Color.blue)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .disabled(simulator.isSimulating)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Generated Span Operations:")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                
+                Group {
+                    Text("• bt.write.command (Command Latency)")
+                    Text("• device.response (ACK Response)")
+                    Text("• bt.connection (Connection Success)")
+                    Text("• ui.action.user (UI Performance)")
+                    Text("• ui.screen.load (Screen Load Times)")
+                    Text("• Error patterns for alerts")
+                }
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+        .background(Color(UIColor.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
