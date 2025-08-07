@@ -61,6 +61,101 @@ This app showcases how Sentry's iOS SDK can be used to:
    
    > **⚠️ Simulator Compatibility Note**: If you experience a black screen when running in Xcode simulator, try using iOS 18.5 or higher simulator. Older iOS versions may have compatibility issues with the SwiftUI setup.
 
+## 📊 **Data Simulation System**
+
+The app includes a **comprehensive data simulator** that generates realistic test data for building Sentry dashboards and alerts.
+
+### **How to Use the Simulator**
+
+1. **Launch the app** in iOS Simulator
+2. **Navigate to Settings tab** (gear icon)
+3. **Find "Sentry Dashboard Data Simulator"** section
+4. **Configure session count** (50-500 sessions, default: 150)
+5. **Click "Start Simulation"** 
+6. **Monitor progress** as data is generated
+
+### **Generated Span Operations**
+
+The simulator creates the following span operations that map directly to dashboard metrics:
+
+| Span Operation | Purpose | Typical Range | Dashboard Use |
+|---|---|---|---|
+| `bt.write.command` | BLE command latency | 80-600ms | Command responsiveness charts |
+| `device.response` | ACK response times | 50-300ms | Device communication health |
+| `bt.connection` | Connection attempts | 800-7500ms | Pairing success rates |
+| `ui.action.user` | UI interactions | 20-150ms | App responsiveness |
+| `ui.screen.load` | Screen load times | 80-400ms | Navigation performance |
+
+### **Realistic Data Patterns**
+
+The simulator generates diverse scenarios:
+
+- **User Personas**: Happy users, impatient users, power users, troubled users
+- **Device Scenarios**: Optimal conditions, weak signal, interference, low battery  
+- **Success/Failure Rates**: 85-98% success rates with realistic error patterns
+- **Temporal Distribution**: Events spread over time for natural-looking data
+
+### **What Happens During Simulation**
+
+The simulator creates **real Sentry transactions and spans** using:
+- `SentrySDK.startTransaction()` - Creates actual transactions
+- `transaction.startChild()` - Creates real child spans  
+- `SentrySDK.capture(error:)` - Sends real error events
+- `SentrySDK.setUser()` - Sets real user context
+- `span.setTag()` / `span.setData()` - Real span metadata
+
+**Expected Results:** After running 150 sessions (~2-3 minutes), you'll see data in your Sentry organization within 30 seconds for building dashboards and alerts.
+
+## 🎯 **Building Sentry Dashboards from Simulated Data**
+
+After running the simulation, follow these steps to create monitoring dashboards:
+
+### **Step 1: Access Your Data**
+1. Go to [sentry.io](https://sentry.io/) → Login to your organization
+2. Select your project 
+3. Navigate to **Discover** → **Spans** tab
+
+### **Step 2: Create Key Metrics**
+
+**Command Latency Dashboard:**
+```
+Filter: span.op:bt.write.command
+Series: p95(span.duration)
+Alias: command.latency_ms
+```
+
+**Connection Success Rate:**
+```
+Filter: transaction:"User Session"
+Series: count_if(connection_result:success)/count()
+Alias: bt.pairing.success_rate
+Group by: device_name
+```
+
+**UI Responsiveness:**
+```
+Filter: span.op:ui.action.user
+Series: max(span.duration)
+Alias: ui.response_time_ms
+```
+
+### **Step 3: Set Up Alerts**
+
+**High Latency Alert:**
+- Metric: `p95(span.duration)` where `span.op:bt.write.command`
+- Warning: `> 300ms`
+- Critical: `> 400ms`
+
+**Low Success Rate Alert:**
+- Metric: Connection success rate
+- Warning: `< 98%`
+- Critical: `< 95%`
+
+### **Step 4: Dashboard Layout**
+1. **Top row**: Command latency, ACK latency (Line charts)
+2. **Middle row**: Connection success % (Big Number)
+3. **Bottom row**: UI responsiveness (Area chart)
+
 ## 📊 Sentry Configuration
 
 ### Comprehensive SDK Setup
