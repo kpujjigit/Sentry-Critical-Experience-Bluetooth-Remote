@@ -302,10 +302,11 @@ class SentryDataSimulator: ObservableObject {
         
         print("🎬 Starting simulation: \(sessionCount) user sessions")
         print("📊 Generating dashboard data for span operations:")
+        print("   • bt.scan (Device Scan Performance)")
         print("   • bt.write.command (Command Latency)")
         print("   • device.response (ACK Response Times)")
         print("   • bt.connection (Connection Success Rates)")
-        print("   • ui.action.user (UI Responsiveness)")
+        print("   • ui.action.user (UI Responsiveness & Controls)")
         print("   • ui.screen.load (Screen Load Performance)")
         print("")
         
@@ -360,10 +361,16 @@ class SentryDataSimulator: ObservableObject {
         // 1. Screen Load Simulation
         await simulateScreenLoad("ContentView", scenario: scenario, transaction: sessionTransaction)
         
-        // 2. Device Connection Simulation
+        // 2. Device Scan Simulation (to populate scan_status, devices_found)
+        await simulateDeviceScan(scenario: scenario, transaction: sessionTransaction)
+        
+        // 3. Device Connection Simulation
         await simulateDeviceConnection(device, scenario: scenario, transaction: sessionTransaction)
         
-        // 3. Multiple Audio Commands
+        // 4. One-time track selection user action (user_action: track_select)
+        await simulateTrackSelection(transaction: sessionTransaction)
+        
+        // 5. Multiple Audio Commands + UI control interactions
         for _ in 1...actionCount {
             await simulateAudioCommand(
                 device: device,
@@ -371,6 +378,8 @@ class SentryDataSimulator: ObservableObject {
                 transaction: sessionTransaction,
                 shouldFail: Double.random(in: 0...1) < errorRate
             )
+            // Emit a UI control span (control_type + connected_device). Sometimes volume to include volume_level.
+            await simulateUIControlInteraction(device: device, transaction: sessionTransaction)
             
             // User delay between actions
             let delay = Double.random(in: 0.3...2.0)
@@ -380,6 +389,92 @@ class SentryDataSimulator: ObservableObject {
         sessionTransaction.finish()
     }
     
+    // Simulate a Bluetooth scan to generate bt.scan spans with scan_status and devices_found
+    private func simulateDeviceScan(scenario: String, transaction: Span) async {
+        let scanSpan = transaction.startChild(
+            operation: "bt.scan",
+            description: "Bluetooth Device Scan"
+        )
+        // Randomized scan outcome similar to real app
+        let scanDelay = Double.random(in: 1500...4000)
+        let outcomeRoll = Double.random(in: 0...1)
+        try? await Task.sleep(nanoseconds: UInt64(scanDelay * 1_000_000))
+        var devicesFound = 0
+        if outcomeRoll > 0.5 {
+            // success
+            devicesFound = Int.random(in: 3...5)
+            scanSpan.setTag(value: "completed", key: "scan_status")
+            scanSpan.setTag(value: "success", key: "scan_result")
+        } else {
+            // failure variants
+            let failureRoll = Double.random(in: 0...1)
+            if failureRoll < 0.3 {
+                devicesFound = 0
+                scanSpan.setTag(value: "failure", key: "scan_status")
+                scanSpan.setTag(value: "no_devices", key: "failure_reason")
+                scanSpan.setTag(value: "bluetooth_timeout", key: "scan_result")
+            } else if failureRoll < 0.6 {
+                devicesFound = Int.random(in: 1...2)
+                scanSpan.setTag(value: "partial", key: "scan_status")
+                scanSpan.setTag(value: "incomplete_discovery", key: "failure_reason")
+                scanSpan.setTag(value: "degraded_signal", key: "scan_result")
+            } else {
+                devicesFound = Int.random(in: 2...3)
+                scanSpan.setTag(value: "timeout", key: "scan_status")
+                scanSpan.setTag(value: "scan_timeout", key: "failure_reason")
+                scanSpan.setTag(value: "stale_cache", key: "scan_result")
+                scanSpan.setTag(value: "true", key: "using_cached_results")
+            }
+        }
+        scanSpan.setData(value: devicesFound, key: "devices_found")
+        scanSpan.setData(value: Int(scanDelay), key: "scan_duration_ms")
+        scanSpan.finish()
+    }
+    
+    // Simulate a user track selection to populate user_action: track_select and related fields
+    private func simulateTrackSelection(transaction: Span) async {
+        let span = transaction.startChild(
+            operation: "ui.action.user",
+            description: "User track selection"
+        )
+        span.setTag(value: "track_select", key: "user_action")
+        span.setTag(value: "PlaylistView", key: "screen_name")
+        // Example metadata that matches PlaylistView behavior
+        span.setTag(value: "false", key: "was_playing")
+        span.setTag(value: String(Int.random(in: 0...9)), key: "track_index")
+        try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 40...120) * 1_000_000))
+        span.finish()
+    }
+    
+    // Simulate user control interactions to create ui.action.user spans with control_type and volume_level
+    private func simulateUIControlInteraction(device: BluetoothDevice, transaction: Span) async {
+        enum Control: CaseIterable { case playPause, skipNext, skipPrev, volume }
+        let control = Control.allCases.randomElement()!
+        let span = transaction.startChild(
+            operation: "ui.action.user",
+            description: "Simulated UI Control"
+        )
+        span.setTag(value: "NowPlayingView", key: "screen_name")
+        span.setTag(value: device.name, key: "connected_device")
+        span.setTag(value: "true", key: "is_user_action")
+        switch control {
+        case .playPause:
+            span.setTag(value: "audio.control.playpause", key: "control_type")
+            span.setTag(value: Bool.random() ? "play" : "pause", key: "action")
+        case .skipNext:
+            span.setTag(value: "audio.control.next", key: "control_type")
+        case .skipPrev:
+            span.setTag(value: "audio.control.previous", key: "control_type")
+        case .volume:
+            span.setTag(value: "audio.volume.adjust", key: "control_type")
+            let level = Double.random(in: 0...1)
+            span.setData(value: level, key: "volume_level")
+        }
+        // Basic duration to make the span visible in charts
+        try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 20...120) * 1_000_000))
+        span.finish()
+    }
+
     private func simulateScreenLoad(_ screenName: String, scenario: String, transaction: Span) async {
         let loadSpan = transaction.startChild(
             operation: "ui.screen.load",
