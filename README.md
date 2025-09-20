@@ -80,7 +80,7 @@ Tip: Filter by `device_name:"Basement Sub"` to highlight problematic behavior.
   - span.data.write_latency_ms, span.data.ack_latency_ms, span.data.volume_level
 - Track selection is `user_action:track_select`.
 
-## Dashboard Metric Ideas
+## Sentry: Custom Dashboard Metric Ideas ([Docs](https://docs.sentry.io/product/onboarding/alerts-dashboards/))
 
 - Command Latency (p95)
   - What: How long commands take end-to-end
