@@ -80,8 +80,9 @@ Tip: Filter by `device_name:"Basement Sub"` to highlight problematic behavior.
   - span.data.write_latency_ms, span.data.ack_latency_ms, span.data.volume_level
 - Track selection is `user_action:track_select`.
 
-## Sentry: Custom Dashboard Metric Ideas (Requires Sentry Business Tier or Greater - [Docs](https://docs.sentry.io/product/onboarding/alerts-dashboards/))
+## Sentry: Custom Dashboard, Metric Alert Ideas (Requires Team Plan or Higher - [Docs](https://docs.sentry.io/product/onboarding/alerts-dashboards/))
 
+# Sentry Dashboards
 - Command Latency (p95)
   - What: How long commands take end-to-end
   - Query: `span.op:bt.write.command` → p95(span.duration) grouped by `tags.device_name`
@@ -113,6 +114,38 @@ Tip: Filter by `device_name:"Basement Sub"` to highlight problematic behavior.
   - What: Reliability of BLE commands
   - Query: `span.op:bt.write.command` → count_if(tags.command_status:failed) / count()
   - Group by: `tags.device_name`
+
+# Sentry Metric Alerts
+   1) BLE Command Latency (p95) alert : Detect slow end-to-end BLE commands.
+   - Dataset: Spans
+   - Aggregate: p95(span.duration)
+   - Filter: `span.op:bt.write.command`
+   - Threshold: > 200 ms for 5 minutes (tune based on baseline)
+   - Tip: For demo, either:
+      - Per-device alert (Group by), or
+      - Focus on the bad actor: add filter `tags.device_name:"Basement Sub"` and use a tighter threshold (e.g., > 300 ms).
+
+   2) ACK Response Latency (p95) alert : Catch devices with slow acknowledgments.
+   - Dataset: Spans
+   - Aggregate: p95(span.duration)
+   - Filter: `span.op:device.response`
+   - Threshold: > 120 ms for 5 minutes
+
+   3) UI Control Responsiveness alert (Next/Play-Pause)
+   - Purpose: User-perceived lag on key controls.
+   - Dataset: Spans
+   - Aggregate: p95(span.duration)
+   - Filter (per-control):
+   - Next: `span.op:ui.action.user tags.control_type:"audio.control.next"`
+   - Play/Pause: `span.op:ui.action.user tags.control_type:"audio.control.playpause"`
+   - Thresholds (match demo expectations): Next > 150 ms; Play/Pause > 120 ms
+
+   4) Screen Load Performance alert
+   - Purpose: Slow screen loads for SwiftUI views.
+   - Dataset: Spans
+   - Aggregate: p75(span.data.load_time_ms)
+   - Filter: `span.op:ui.screen.load`
+   - Threshold: > 400 ms (e.g., for `NowPlayingView`), 5–15 minute window
 
 ## What’s Included
 
