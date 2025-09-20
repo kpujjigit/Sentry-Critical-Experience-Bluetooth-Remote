@@ -20,9 +20,15 @@ Important attributes and data:
 - Tags: device_name, device_type, connection_result, control_type, screen_name, load_status, user_action
 - Data (span.data.*): devices_found, scan_duration_ms, signal_strength, connection_time_ms, write_latency_ms, ack_latency_ms, total_latency_ms, render_time_ms, volume_level
 
+<img width="572" height="1013" alt="Screenshot 2025-09-19 at 8 26 22 PM" src="https://github.com/user-attachments/assets/4bb25a20-ba37-4def-8052-2965c1790303" />
+
+<img width="600" height="1008" alt="Screenshot 2025-09-19 at 8 24 29 PM" src="https://github.com/user-attachments/assets/82fca854-e73e-4f0a-b9df-5ce98393c05c" />
+
 ## Problem Device for Demos
 
 The device named "Basement Sub" is intentionally slower and less reliable in the simulator. You will see elevated percentiles and higher failure rates for this device across connection and command metrics. Use this to demonstrate how Sentry helps you detect, visualize, and triage problems in critical workflows.
+
+<img width="569" height="1023" alt="Screenshot 2025-09-19 at 8 24 44 PM" src="https://github.com/user-attachments/assets/ea2b3e9b-9ffe-4ffb-a946-838d79448c0b" />
 
 ## Local Setup
 
@@ -52,6 +58,10 @@ The device named "Basement Sub" is intentionally slower and less reliable in the
 2. In "Sentry Dashboard Data Simulator":
    - Choose session count (150 recommended)
    - Start Simulation
+  
+<img width="544" height="1017" alt="Screenshot 2025-09-19 at 8 22 58 PM" src="https://github.com/user-attachments/assets/e5de0ecb-637a-4bc6-93db-d8aee3cf8a72" />
+
+<img width="429" height="674" alt="Screenshot 2025-09-19 at 8 27 34 PM" src="https://github.com/user-attachments/assets/1c57d94b-e2d6-43d7-954f-f54a8243ae27" />
 
 The simulator emits:
 - bt.scan with scan_status and devices_found
