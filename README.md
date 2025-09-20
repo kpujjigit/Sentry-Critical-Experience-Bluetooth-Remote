@@ -16,7 +16,8 @@ Demonstrate how to instrument critical mobile workflows with span operations and
 - ui.state.render
 - ui.screen.load
 
-Important attributes and data:
+# #Important attributes and data:
+
 - Tags: device_name, device_type, connection_result, control_type, screen_name, load_status, user_action
 - Data (span.data.*): devices_found, scan_duration_ms, signal_strength, connection_time_ms, write_latency_ms, ack_latency_ms, total_latency_ms, render_time_ms, volume_level
 
@@ -24,11 +25,13 @@ Important attributes and data:
 
 <img width="600" height="1008" alt="Screenshot 2025-09-19 at 8 24 29 PM" src="https://github.com/user-attachments/assets/82fca854-e73e-4f0a-b9df-5ce98393c05c" />
 
+
 ## Problem Device for Demos
 
 The device named "Basement Sub" is intentionally slower and less reliable in the simulator. You will see elevated percentiles and higher failure rates for this device across connection and command metrics. Use this to demonstrate how Sentry helps you detect, visualize, and triage problems in critical workflows.
 
 <img width="569" height="1023" alt="Screenshot 2025-09-19 at 8 24 44 PM" src="https://github.com/user-attachments/assets/ea2b3e9b-9ffe-4ffb-a946-838d79448c0b" />
+
 
 ## Local Setup
 
@@ -63,7 +66,8 @@ The device named "Basement Sub" is intentionally slower and less reliable in the
 
 <img width="429" height="674" alt="Screenshot 2025-09-19 at 8 27 34 PM" src="https://github.com/user-attachments/assets/1c57d94b-e2d6-43d7-954f-f54a8243ae27" />
 
-The simulator emits:
+
+# The simulator emits:
 - bt.scan with scan_status and devices_found
 - bt.connection with connection_result and connection_time_ms
 - bt.write.command with write_latency_ms and total_latency_ms
@@ -80,9 +84,9 @@ Tip: Filter by `device_name:"Basement Sub"` to highlight problematic behavior.
   - span.data.write_latency_ms, span.data.ack_latency_ms, span.data.volume_level
 - Track selection is `user_action:track_select`.
 
-## Sentry: Custom Dashboard, Metric Alert Ideas (Requires Team Plan or Higher - [Docs](https://docs.sentry.io/product/onboarding/alerts-dashboards/))
+## Sentry: Custom Dashboard, Metric Alert Ideas (Requires Team Plan or Higher - Further Ideas [Here](https://docs.sentry.io/product/onboarding/alerts-dashboards/))
 
-# Sentry Dashboards
+### Useful Custom Dashboards
 - Command Latency (p95)
   - What: How long commands take end-to-end
   - Query: `span.op:bt.write.command` → p95(span.duration) grouped by `tags.device_name`
@@ -115,7 +119,7 @@ Tip: Filter by `device_name:"Basement Sub"` to highlight problematic behavior.
   - Query: `span.op:bt.write.command` → count_if(tags.command_status:failed) / count()
   - Group by: `tags.device_name`
 
-# Sentry Metric Alerts
+### Useful Span Metric Alerts
    1) BLE Command Latency (p95) alert : Detect slow end-to-end BLE commands.
    - Dataset: Spans
    - Aggregate: p95(span.duration)
