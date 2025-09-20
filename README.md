@@ -34,7 +34,7 @@ The device named "Basement Sub" is intentionally slower and less reliable in the
 2. Clone and open
    ```bash
    git clone <repository-url>
-   cd "CX - BT Remote"
+   cd <repo-folder>   # e.g., cd "CX - BT Remote"
    open BluetoothRemote.xcodeproj
    ```
 
@@ -69,6 +69,40 @@ Tip: Filter by `device_name:"Basement Sub"` to highlight problematic behavior.
   - span.data.devices_found, span.data.signal_strength
   - span.data.write_latency_ms, span.data.ack_latency_ms, span.data.volume_level
 - Track selection is `user_action:track_select`.
+
+## Dashboard Metric Ideas
+
+- Command Latency (p95)
+  - What: How long commands take end-to-end
+  - Query: `span.op:bt.write.command` → p95(span.duration) grouped by `tags.device_name`
+  - Tip: Compare `device_name:"Basement Sub"` vs others
+
+- ACK Response Latency (p95)
+  - What: Device acknowledgment times
+  - Query: `span.op:device.response` → p95(span.duration) grouped by `tags.device_type`
+
+- Connection Success Rate
+  - What: Reliability of device connections
+  - Query: `span.op:bt.connection` → count_if(tags.connection_result:success) / count()
+  - Group by: `tags.device_name`
+
+- UI Control Responsiveness
+  - What: Interaction responsiveness (play/pause/next/prev/volume)
+  - Query: `span.op:ui.action.user` → max(span.duration), filter by `tags.control_type`
+  - Examples: `tags.control_type:"audio.control.playpause"`, `"audio.control.next"`
+
+- Screen Load Performance
+  - What: How fast screens load
+  - Query: `span.op:ui.screen.load` → p75(span.data.load_time_ms) grouped by `tags.screen_name`
+
+- Volume Level Distribution
+  - What: Typical volume levels used
+  - Query: `span.op:ui.action.user` and `tags.control_type:"audio.volume.adjust"` → avg(span.data.volume_level)
+
+- Command Failure Rate
+  - What: Reliability of BLE commands
+  - Query: `span.op:bt.write.command` → count_if(tags.command_status:failed) / count()
+  - Group by: `tags.device_name`
 
 ## What’s Included
 

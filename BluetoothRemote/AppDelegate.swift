@@ -7,7 +7,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
         // Read Sentry DSN from environment variable or use placeholder
-        let sentryDSN = ProcessInfo.processInfo.environment["SENTRY_DSN"] ?? "https://2cd5f78faaf215a707d856b152feace9@o4504052292517888.ingest.us.sentry.io/4509725305929728"
+        let sentryDSN = ProcessInfo.processInfo.environment["SENTRY_DSN"] ?? "https://cb3d7d5364efdeacd8d827ce519a11d0@o88872.ingest.us.sentry.io/4509826886270976"
         let sentryEnvironment = ProcessInfo.processInfo.environment["SENTRY_ENVIRONMENT"] ?? "demo"
         let sentryRelease = ProcessInfo.processInfo.environment["SENTRY_RELEASE"] ?? "bluetooth-remote@0.0.1"
 

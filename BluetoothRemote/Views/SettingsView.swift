@@ -287,10 +287,23 @@ class SentryDataSimulator: ObservableObject {
     
     private let bluetoothService: BluetoothService
     private let audioPlayer: AudioPlayerService
+    private var shouldCancel = false
+    // Reduce simulated delays by this factor (lower = faster)
+    private let speedFactor: Double = 0.35
     
     init(bluetoothService: BluetoothService, audioPlayer: AudioPlayerService) {
         self.bluetoothService = bluetoothService
         self.audioPlayer = audioPlayer
+    }
+    
+    func stop() {
+        shouldCancel = true
+    }
+    
+    // Sleep helper that scales milliseconds by speedFactor
+    private func sleepMs(_ ms: Double) async {
+        let scaled = max(0, ms * speedFactor)
+        try? await Task.sleep(nanoseconds: UInt64(scaled * 1_000_000))
     }
     
     func runSimulation(sessionCount: Int = 150) async {
@@ -299,6 +312,7 @@ class SentryDataSimulator: ObservableObject {
             simulationProgress = 0
             totalSessions = sessionCount
         }
+        shouldCancel = false
         
         print("🎬 Starting simulation: \(sessionCount) user sessions")
         print("📊 Generating dashboard data for span operations:")
@@ -311,6 +325,7 @@ class SentryDataSimulator: ObservableObject {
         print("")
         
         for sessionNum in 1...sessionCount {
+            if shouldCancel { break }
             await simulateUserSession(sessionId: sessionNum)
             
             await MainActor.run {
@@ -318,14 +333,17 @@ class SentryDataSimulator: ObservableObject {
             }
             
             // Small delay to spread events over time  
-            try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 50...200) * 1_000_000))
+            await sleepMs(Double.random(in: 50...200))
+            if shouldCancel { break }
         }
         
-        await MainActor.run {
-            isSimulating = false
-        }
+        await MainActor.run { isSimulating = false }
         
-        print("\n🎉 Simulation Complete!")
+        if shouldCancel {
+            print("\n⏹️ Simulation stopped by user")
+        } else {
+            print("\n🎉 Simulation Complete!")
+        }
         print("📈 Check Sentry for generated metrics in:")
         print("   • Performance > Transactions")
         print("   • Discover > Spans")
@@ -360,6 +378,8 @@ class SentryDataSimulator: ObservableObject {
         
         // 1. Screen Load Simulation
         await simulateScreenLoad("ContentView", scenario: scenario, transaction: sessionTransaction)
+        await simulateScreenLoad("NowPlayingView", scenario: scenario, transaction: sessionTransaction)
+        await simulateScreenLoad("PlaylistView", scenario: scenario, transaction: sessionTransaction)
         
         // 2. Device Scan Simulation (to populate scan_status, devices_found)
         await simulateDeviceScan(scenario: scenario, transaction: sessionTransaction)
@@ -372,6 +392,7 @@ class SentryDataSimulator: ObservableObject {
         
         // 5. Multiple Audio Commands + UI control interactions
         for _ in 1...actionCount {
+            if shouldCancel { sessionTransaction.finish(); return }
             await simulateAudioCommand(
                 device: device,
                 scenario: scenario,
@@ -383,7 +404,8 @@ class SentryDataSimulator: ObservableObject {
             
             // User delay between actions
             let delay = Double.random(in: 0.3...2.0)
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            await sleepMs(delay * 1000)
+            if shouldCancel { sessionTransaction.finish(); return }
         }
         
         sessionTransaction.finish()
@@ -398,7 +420,7 @@ class SentryDataSimulator: ObservableObject {
         // Randomized scan outcome similar to real app
         let scanDelay = Double.random(in: 1500...4000)
         let outcomeRoll = Double.random(in: 0...1)
-        try? await Task.sleep(nanoseconds: UInt64(scanDelay * 1_000_000))
+        await sleepMs(scanDelay)
         var devicesFound = 0
         if outcomeRoll > 0.5 {
             // success
@@ -440,15 +462,15 @@ class SentryDataSimulator: ObservableObject {
         span.setTag(value: "track_select", key: "user_action")
         span.setTag(value: "PlaylistView", key: "screen_name")
         // Example metadata that matches PlaylistView behavior
-        span.setTag(value: "false", key: "was_playing")
+        span.setTag(value: Bool.random() ? "true" : "false", key: "was_playing")
         span.setTag(value: String(Int.random(in: 0...9)), key: "track_index")
-        try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 40...120) * 1_000_000))
+        await sleepMs(Double.random(in: 40...120))
         span.finish()
     }
     
     // Simulate user control interactions to create ui.action.user spans with control_type and volume_level
     private func simulateUIControlInteraction(device: BluetoothDevice, transaction: Span) async {
-        enum Control: CaseIterable { case playPause, skipNext, skipPrev, volume }
+        enum Control: CaseIterable { case playPause, skipNext, skipPrev, volume, shuffle }
         let control = Control.allCases.randomElement()!
         let span = transaction.startChild(
             operation: "ui.action.user",
@@ -469,9 +491,12 @@ class SentryDataSimulator: ObservableObject {
             span.setTag(value: "audio.volume.adjust", key: "control_type")
             let level = Double.random(in: 0...1)
             span.setData(value: level, key: "volume_level")
+        case .shuffle:
+            span.setTag(value: "playlist.shuffle", key: "control_type")
+            span.setTag(value: Bool.random() ? "true" : "false", key: "shuffle_enabled")
         }
         // Basic duration to make the span visible in charts
-        try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 20...120) * 1_000_000))
+        await sleepMs(Double.random(in: 20...120))
         span.finish()
     }
 
@@ -489,10 +514,11 @@ class SentryDataSimulator: ObservableObject {
         let scenarioMultiplier = scenario == "optimal" ? 1.0 : Double.random(in: 1.5...2.5)
         let loadTime = baseLoadTime * scenarioMultiplier
         
-        try? await Task.sleep(nanoseconds: UInt64(loadTime * 1_000_000))
+        await sleepMs(loadTime)
         
         loadSpan.setData(value: loadTime, key: "load_time_ms")
         loadSpan.setTag(value: loadTime > 400 ? "slow" : "normal", key: "load_performance")
+        loadSpan.setTag(value: "loaded", key: "load_status")
         loadSpan.finish()
     }
     
@@ -512,10 +538,11 @@ class SentryDataSimulator: ObservableObject {
         }
         
         let baseConnectionTime = Double.random(in: 800...2500)
-        let scenarioImpact = scenario == "optimal" ? 1.0 : Double.random(in: 1.5...3.0)
+        var scenarioImpact = scenario == "optimal" ? 1.0 : Double.random(in: 1.5...3.0)
+        if device.name == "Basement Sub" { scenarioImpact *= 1.6 }
         let connectionTime = baseConnectionTime * scenarioImpact
         
-        try? await Task.sleep(nanoseconds: UInt64(connectionTime * 1_000_000))
+        await sleepMs(connectionTime)
         
         let successRate = scenario == "optimal" ? 0.98 : 0.85
         let willSucceed = Double.random(in: 0...1) < successRate
@@ -563,14 +590,15 @@ class SentryDataSimulator: ObservableObject {
         commandSpan.setData(value: device.signalStrength, key: "signal_strength")
         
         let baseWriteLatency = Double.random(in: 15...80)
-        let baseAckLatency = Double.random(in: 20...120)
-        let scenarioMultiplier = scenario == "optimal" ? 1.0 : Double.random(in: 1.5...3.0)
+        var baseAckLatency = Double.random(in: 20...120)
+        var scenarioMultiplier = scenario == "optimal" ? 1.0 : Double.random(in: 1.5...3.0)
+        if device.name == "Basement Sub" { scenarioMultiplier *= 2.0; baseAckLatency *= 1.8 }
         
         let writeLatency = baseWriteLatency * scenarioMultiplier
         let ackLatency = baseAckLatency * scenarioMultiplier
         
         // Simulate write phase
-        try? await Task.sleep(nanoseconds: UInt64(writeLatency * 1_000_000))
+        await sleepMs(writeLatency)
         
         if shouldFail {
             commandSpan.setTag(value: "failed", key: "command_status")
@@ -604,7 +632,7 @@ class SentryDataSimulator: ObservableObject {
         responseSpan.setTag(value: "bluetooth_ack", key: "response_type")
         responseSpan.setTag(value: scenario, key: "device_scenario")
         
-        try? await Task.sleep(nanoseconds: UInt64(ackLatency * 1_000_000))
+        await sleepMs(ackLatency)
         
         let totalLatency = writeLatency + ackLatency
         
@@ -612,6 +640,8 @@ class SentryDataSimulator: ObservableObject {
         commandSpan.setTag(value: "success", key: "command_status")
         commandSpan.setData(value: writeLatency, key: "write_latency_ms")
         commandSpan.setData(value: totalLatency, key: "total_latency_ms")
+        // duplicate ack on parent for easier queries
+        commandSpan.setData(value: ackLatency, key: "ack_latency_ms")
         
         responseSpan.setData(value: ackLatency, key: "ack_latency_ms")
         responseSpan.setTag(value: "received", key: "ack_status")
@@ -627,7 +657,7 @@ class SentryDataSimulator: ObservableObject {
         renderSpan.setTag(value: "true", key: "is_mobile_vital")
         
         let renderTime = min(totalLatency * 0.15, 80.0)
-        try? await Task.sleep(nanoseconds: UInt64(renderTime * 1_000_000))
+        await sleepMs(renderTime)
         
         renderSpan.setData(value: renderTime, key: "render_time_ms")
         renderSpan.finish()
@@ -675,13 +705,15 @@ struct SentryDataSimulatorView: View {
             }
             
             Button(action: {
-                Task {
-                    await simulator.runSimulation(sessionCount: sessionCount)
+                if simulator.isSimulating {
+                    simulator.stop()
+                } else {
+                    Task { await simulator.runSimulation(sessionCount: sessionCount) }
                 }
             }) {
                 HStack {
                     Image(systemName: simulator.isSimulating ? "stop.circle" : "play.circle")
-                    Text(simulator.isSimulating ? "Running..." : "Start Simulation")
+                    Text(simulator.isSimulating ? "Stop Simulation" : "Start Simulation")
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
@@ -689,7 +721,7 @@ struct SentryDataSimulatorView: View {
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
-            .disabled(simulator.isSimulating)
+            // Allow stopping while running
             
             VStack(alignment: .leading, spacing: 8) {
                 Text("Generated Span Operations:")
